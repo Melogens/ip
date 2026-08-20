@@ -11,13 +11,8 @@ public class Deadline extends Task {
      * @param by Date or time by which the task should be completed.
      */
     public Deadline(String description, String by) {
-        super(description);
+        super(description, TaskType.DEADLINE);
         this.by = by;
-    }
-
-    @Override
-    protected String getTypeIcon() {
-        return "D";
     }
 
     @Override

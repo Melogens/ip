@@ -3,15 +3,18 @@
  */
 public class Task {
     private final String description;
+    private final TaskType type;
     private boolean isDone;
 
     /**
      * Creates a new task that has not been marked as done yet.
      *
      * @param description Details of the task.
+     * @param type Category of the task.
      */
-    public Task(String description) {
+    public Task(String description, TaskType type) {
         this.description = description;
+        this.type = type;
         this.isDone = false;
     }
 
@@ -44,7 +47,7 @@ public class Task {
      * @return Task type symbol.
      */
     protected String getTypeIcon() {
-        return " ";
+        return this.type.getIcon();
     }
 
     @Override

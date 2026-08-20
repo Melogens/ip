@@ -13,14 +13,9 @@ public class Event extends Task {
      * @param to Date or time when the event ends.
      */
     public Event(String description, String from, String to) {
-        super(description);
+        super(description, TaskType.EVENT);
         this.from = from;
         this.to = to;
-    }
-
-    @Override
-    protected String getTypeIcon() {
-        return "E";
     }
 
     @Override
