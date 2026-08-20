@@ -9,8 +9,8 @@ Unless the user says otherwise, assume that you are assisting a student working 
 # Student profile
 
 * Prior knowledge: Basic Java and OOP concepts.
-* Level of programming experience: [to be filled]
-* IDE and level of expertise: [to be filled]
+* Level of programming experience: Have done much algorithmatic programming (competitive) but not SWE. 
+* IDE and level of expertise: IntelliJ - Low. VSCode - High. Vim/Shell - Medium.
 
 # Guidance for interacting with users
 
