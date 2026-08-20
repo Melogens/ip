@@ -9,6 +9,8 @@ public class DowntownGurl {
     private static final String DEADLINE_SEPARATOR = " /by ";
     private static final String EVENT_FROM_SEPARATOR = " /from ";
     private static final String EVENT_TO_SEPARATOR = " /to ";
+    private static final String EMPTY_TASK_MESSAGE = "Soz queen you gotta at least give me SOMETHING to work with.";
+    private static final String UNKNOWN_COMMAND_MESSAGE = "U sleeping alright? Sounds like you ain't...";
 
     public static void main(String[] args) {
         String banner = """
@@ -44,42 +46,103 @@ public class DowntownGurl {
             }
 
             if (command.startsWith("mark ")) {
-                Task task = getTaskByNumberFromCommand(tasks, command, 5);
+                Task task = getTaskByNumberFromCommand(tasks, taskCount, command, 5);
+                if (task == null) {
+                    printErrorMessage(UNKNOWN_COMMAND_MESSAGE);
+                    continue;
+                }
                 task.markAsDone();
                 printUpdatedTaskMessage("Kays, I've marked this task as done!", task);
                 continue;
             }
 
             if (command.startsWith("unmark ")) {
-                Task task = getTaskByNumberFromCommand(tasks, command, 7);
+                Task task = getTaskByNumberFromCommand(tasks, taskCount, command, 7);
+                if (task == null) {
+                    printErrorMessage(UNKNOWN_COMMAND_MESSAGE);
+                    continue;
+                }
                 task.markAsNotDone();
                 printUpdatedTaskMessage("Sure, I unmarked it!", task);
                 continue;
             }
 
-            if (command.startsWith("todo ")) {
+            if (command.equals("todo") || command.startsWith("todo ")) {
+                if (!hasTodoDescription(command)) {
+                    printErrorMessage(EMPTY_TASK_MESSAGE);
+                    continue;
+                }
                 tasks[taskCount] = new Todo(command.substring(5));
                 taskCount = printAddedTaskMessage(tasks, taskCount);
                 continue;
             }
 
-            if (command.startsWith("deadline ")) {
+            if (command.equals("deadline") || command.startsWith("deadline ")) {
+                if (!hasDeadlineDetails(command)) {
+                    printErrorMessage(EMPTY_TASK_MESSAGE);
+                    continue;
+                }
                 tasks[taskCount] = createDeadline(command);
                 taskCount = printAddedTaskMessage(tasks, taskCount);
                 continue;
             }
 
-            if (command.startsWith("event ")) {
+            if (command.equals("event") || command.startsWith("event ")) {
+                if (!hasEventDetails(command)) {
+                    printErrorMessage(EMPTY_TASK_MESSAGE);
+                    continue;
+                }
                 tasks[taskCount] = createEvent(command);
                 taskCount = printAddedTaskMessage(tasks, taskCount);
                 continue;
             }
 
-            tasks[taskCount] = new Todo(command);
-            taskCount++;
-            System.out.println("added: " + command);
-            System.out.println(DIVIDER);
+            printErrorMessage(UNKNOWN_COMMAND_MESSAGE);
         }
+    }
+
+    /**
+     * Checks whether a todo command includes a non-empty description.
+     *
+     * @param command Full user command.
+     * @return True if the todo description is present.
+     */
+    private static boolean hasTodoDescription(String command) {
+        return command.length() > 5 && !command.substring(5).isBlank();
+    }
+
+    /**
+     * Checks whether a deadline command includes both a description and a due date/time.
+     *
+     * @param command Full user command.
+     * @return True if all deadline fields are present.
+     */
+    private static boolean hasDeadlineDetails(String command) {
+        int separatorIndex = command.indexOf(DEADLINE_SEPARATOR);
+        if (separatorIndex == -1) {
+            return false;
+        }
+        String description = command.substring(9, separatorIndex);
+        String by = command.substring(separatorIndex + DEADLINE_SEPARATOR.length());
+        return !description.isBlank() && !by.isBlank();
+    }
+
+    /**
+     * Checks whether an event command includes a description, start, and end.
+     *
+     * @param command Full user command.
+     * @return True if all event fields are present.
+     */
+    private static boolean hasEventDetails(String command) {
+        int fromIndex = command.indexOf(EVENT_FROM_SEPARATOR);
+        int toIndex = command.indexOf(EVENT_TO_SEPARATOR);
+        if (fromIndex == -1 || toIndex == -1 || fromIndex >= toIndex) {
+            return false;
+        }
+        String description = command.substring(6, fromIndex);
+        String from = command.substring(fromIndex + EVENT_FROM_SEPARATOR.length(), toIndex);
+        String to = command.substring(toIndex + EVENT_TO_SEPARATOR.length());
+        return !description.isBlank() && !from.isBlank() && !to.isBlank();
     }
 
     /**
@@ -114,12 +177,21 @@ public class DowntownGurl {
      * Finds the task number in a mark or unmark command and returns the matching task.
      *
      * @param tasks Current task list.
+     * @param taskCount Number of tasks in the list.
      * @param command Full user command.
      * @param taskNumberStartIndex Index where the task number starts.
-     * @return Task selected by the user.
+     * @return Task selected by the user, or null if the task number is invalid.
      */
-    private static Task getTaskByNumberFromCommand(Task[] tasks, String command, int taskNumberStartIndex) {
-        int taskNumber = Integer.parseInt(command.substring(taskNumberStartIndex));
+    private static Task getTaskByNumberFromCommand(Task[] tasks, int taskCount, String command, int taskNumberStartIndex) {
+        int taskNumber;
+        try {
+            taskNumber = Integer.parseInt(command.substring(taskNumberStartIndex));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        if (taskNumber < 1 || taskNumber > taskCount) {
+            return null;
+        }
         return tasks[taskNumber - 1];
     }
 
@@ -163,5 +235,15 @@ public class DowntownGurl {
         System.out.println("Now you got " + updatedTaskCount + " tasks in the roster.");
         System.out.println(DIVIDER);
         return updatedTaskCount;
+    }
+
+    /**
+     * Prints an error message using the same divider style as normal chatbot replies.
+     *
+     * @param message Error message to show.
+     */
+    private static void printErrorMessage(String message) {
+        System.out.println(message);
+        System.out.println(DIVIDER);
     }
 }
