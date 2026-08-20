@@ -47,15 +47,6 @@ public class Task {
         return " ";
     }
 
-    /**
-     * Returns the user-provided details of this task.
-     *
-     * @return Task description.
-     */
-    protected String getDescription() {
-        return this.description;
-    }
-
     @Override
     public String toString() {
         return "[" + getTypeIcon() + "][" + getStatusIcon() + "] " + this.description;

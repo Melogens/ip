@@ -39,31 +39,21 @@ public class DowntownGurl {
             }
 
             if (command.equals("list")) {
-                System.out.println("Here's your tasks:");
-                for (int i = 0; i < taskCount; i++) {
-                    System.out.println(" " + (i + 1) + ". " + tasks[i]);
-                }
-                System.out.println(DIVIDER);
+                printTaskList(tasks, taskCount);
                 continue;
             }
 
             if (command.startsWith("mark ")) {
-                int taskNumber = Integer.parseInt(command.substring(5));
-                int taskIndex = taskNumber - 1;
-                tasks[taskIndex].markAsDone();
-                System.out.println("Kays, I've marked this task as done!");
-                System.out.println("  " + tasks[taskIndex]);
-                System.out.println(DIVIDER);
+                Task task = getTaskByNumberFromCommand(tasks, command, 5);
+                task.markAsDone();
+                printUpdatedTaskMessage("Kays, I've marked this task as done!", task);
                 continue;
             }
 
             if (command.startsWith("unmark ")) {
-                int taskNumber = Integer.parseInt(command.substring(7));
-                int taskIndex = taskNumber - 1;
-                tasks[taskIndex].markAsNotDone();
-                System.out.println("Sure, I unmarked it!");
-                System.out.println("  " + tasks[taskIndex]);
-                System.out.println(DIVIDER);
+                Task task = getTaskByNumberFromCommand(tasks, command, 7);
+                task.markAsNotDone();
+                printUpdatedTaskMessage("Sure, I unmarked it!", task);
                 continue;
             }
 
@@ -74,21 +64,13 @@ public class DowntownGurl {
             }
 
             if (command.startsWith("deadline ")) {
-                int separatorIndex = command.indexOf(DEADLINE_SEPARATOR);
-                String description = command.substring(9, separatorIndex);
-                String by = command.substring(separatorIndex + DEADLINE_SEPARATOR.length());
-                tasks[taskCount] = new Deadline(description, by);
+                tasks[taskCount] = createDeadline(command);
                 taskCount = printAddedTaskMessage(tasks, taskCount);
                 continue;
             }
 
             if (command.startsWith("event ")) {
-                int fromIndex = command.indexOf(EVENT_FROM_SEPARATOR);
-                int toIndex = command.indexOf(EVENT_TO_SEPARATOR);
-                String description = command.substring(6, fromIndex);
-                String from = command.substring(fromIndex + EVENT_FROM_SEPARATOR.length(), toIndex);
-                String to = command.substring(toIndex + EVENT_TO_SEPARATOR.length());
-                tasks[taskCount] = new Event(description, from, to);
+                tasks[taskCount] = createEvent(command);
                 taskCount = printAddedTaskMessage(tasks, taskCount);
                 continue;
             }
@@ -98,6 +80,73 @@ public class DowntownGurl {
             System.out.println("added: " + command);
             System.out.println(DIVIDER);
         }
+    }
+
+    /**
+     * Creates a deadline task from a command in this form: deadline DESCRIPTION /by TIME.
+     *
+     * @param command Full user command.
+     * @return New deadline task.
+     */
+    private static Deadline createDeadline(String command) {
+        int separatorIndex = command.indexOf(DEADLINE_SEPARATOR);
+        String description = command.substring(9, separatorIndex);
+        String by = command.substring(separatorIndex + DEADLINE_SEPARATOR.length());
+        return new Deadline(description, by);
+    }
+
+    /**
+     * Creates an event task from a command in this form: event DESCRIPTION /from START /to END.
+     *
+     * @param command Full user command.
+     * @return New event task.
+     */
+    private static Event createEvent(String command) {
+        int fromIndex = command.indexOf(EVENT_FROM_SEPARATOR);
+        int toIndex = command.indexOf(EVENT_TO_SEPARATOR);
+        String description = command.substring(6, fromIndex);
+        String from = command.substring(fromIndex + EVENT_FROM_SEPARATOR.length(), toIndex);
+        String to = command.substring(toIndex + EVENT_TO_SEPARATOR.length());
+        return new Event(description, from, to);
+    }
+
+    /**
+     * Finds the task number in a mark or unmark command and returns the matching task.
+     *
+     * @param tasks Current task list.
+     * @param command Full user command.
+     * @param taskNumberStartIndex Index where the task number starts.
+     * @return Task selected by the user.
+     */
+    private static Task getTaskByNumberFromCommand(Task[] tasks, String command, int taskNumberStartIndex) {
+        int taskNumber = Integer.parseInt(command.substring(taskNumberStartIndex));
+        return tasks[taskNumber - 1];
+    }
+
+    /**
+     * Prints all tasks currently in the list.
+     *
+     * @param tasks Current task list.
+     * @param taskCount Number of tasks in the list.
+     */
+    private static void printTaskList(Task[] tasks, int taskCount) {
+        System.out.println("Here's your tasks:");
+        for (int i = 0; i < taskCount; i++) {
+            System.out.println(" " + (i + 1) + ". " + tasks[i]);
+        }
+        System.out.println(DIVIDER);
+    }
+
+    /**
+     * Prints the result of marking or unmarking a task.
+     *
+     * @param message Confirmation message.
+     * @param task Updated task.
+     */
+    private static void printUpdatedTaskMessage(String message, Task task) {
+        System.out.println(message);
+        System.out.println("  " + task);
+        System.out.println(DIVIDER);
     }
 
     /**
