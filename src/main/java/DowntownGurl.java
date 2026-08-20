@@ -54,6 +54,16 @@ public class DowntownGurl {
                 continue;
             }
 
+            if (command.startsWith("unmark ")) {
+                int taskNumber = Integer.parseInt(command.substring(7));
+                int taskIndex = taskNumber - 1;
+                isDone[taskIndex] = false;
+                System.out.println("Sure, I unmarked it!");
+                System.out.println("  [ ] " + tasks[taskIndex]);
+                System.out.println(DIVIDER);
+                continue;
+            }
+
             tasks[taskCount] = command;
             taskCount++;
             System.out.println("added: " + command);
