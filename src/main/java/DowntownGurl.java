@@ -11,6 +11,7 @@ public class DowntownGurl {
     private static final String EVENT_TO_SEPARATOR = " /to ";
     private static final String EMPTY_TASK_MESSAGE = "Soz queen you gotta at least give me SOMETHING to work with.";
     private static final String UNKNOWN_COMMAND_MESSAGE = "U sleeping alright? Sounds like you ain't...";
+    private static final int EXIT_TASK_COUNT = -1;
 
     public static void main(String[] args) {
         String banner = """
@@ -35,54 +36,67 @@ public class DowntownGurl {
         while (scanner.hasNextLine()) {
             String command = scanner.nextLine();
             try {
-                if (command.equals("bye")) {
-                    System.out.println("That's bombz. Byes!");
-                    System.out.println(DIVIDER);
+                taskCount = handleCommand(command, tasks, taskCount);
+                if (taskCount == EXIT_TASK_COUNT) {
                     break;
                 }
-
-                if (command.equals("list")) {
-                    printTaskList(tasks, taskCount);
-                    continue;
-                }
-
-                if (command.startsWith("mark ")) {
-                    Task task = getTaskByNumberFromCommand(tasks, taskCount, command, 5);
-                    task.markAsDone();
-                    printUpdatedTaskMessage("Kays, I've marked this task as done!", task);
-                    continue;
-                }
-
-                if (command.startsWith("unmark ")) {
-                    Task task = getTaskByNumberFromCommand(tasks, taskCount, command, 7);
-                    task.markAsNotDone();
-                    printUpdatedTaskMessage("Sure, I unmarked it!", task);
-                    continue;
-                }
-
-                if (command.equals("todo") || command.startsWith("todo ")) {
-                    tasks[taskCount] = createTodo(command);
-                    taskCount = printAddedTaskMessage(tasks, taskCount);
-                    continue;
-                }
-
-                if (command.equals("deadline") || command.startsWith("deadline ")) {
-                    tasks[taskCount] = createDeadline(command);
-                    taskCount = printAddedTaskMessage(tasks, taskCount);
-                    continue;
-                }
-
-                if (command.equals("event") || command.startsWith("event ")) {
-                    tasks[taskCount] = createEvent(command);
-                    taskCount = printAddedTaskMessage(tasks, taskCount);
-                    continue;
-                }
-
-                throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
             } catch (DowntownGurlException e) {
                 printErrorMessage(e.getMessage());
             }
         }
+    }
+
+    /**
+     * Handles one user command and returns the updated task count.
+     *
+     * @param command Full user command.
+     * @param tasks Current task list.
+     * @param taskCount Number of tasks in the list before handling the command.
+     * @return Updated task count, or EXIT_TASK_COUNT if the user wants to exit.
+     * @throws DowntownGurlException If the command cannot be handled.
+     */
+    private static int handleCommand(String command, Task[] tasks, int taskCount) throws DowntownGurlException {
+        if (command.equals("bye")) {
+            System.out.println("That's bombz. Byes!");
+            System.out.println(DIVIDER);
+            return EXIT_TASK_COUNT;
+        }
+
+        if (command.equals("list")) {
+            printTaskList(tasks, taskCount);
+            return taskCount;
+        }
+
+        if (command.startsWith("mark ")) {
+            Task task = getTaskByNumberFromCommand(tasks, taskCount, command, 5);
+            task.markAsDone();
+            printUpdatedTaskMessage("Kays, I've marked this task as done!", task);
+            return taskCount;
+        }
+
+        if (command.startsWith("unmark ")) {
+            Task task = getTaskByNumberFromCommand(tasks, taskCount, command, 7);
+            task.markAsNotDone();
+            printUpdatedTaskMessage("Sure, I unmarked it!", task);
+            return taskCount;
+        }
+
+        if (command.equals("todo") || command.startsWith("todo ")) {
+            tasks[taskCount] = createTodo(command);
+            return printAddedTaskMessage(tasks, taskCount);
+        }
+
+        if (command.equals("deadline") || command.startsWith("deadline ")) {
+            tasks[taskCount] = createDeadline(command);
+            return printAddedTaskMessage(tasks, taskCount);
+        }
+
+        if (command.equals("event") || command.startsWith("event ")) {
+            tasks[taskCount] = createEvent(command);
+            return printAddedTaskMessage(tasks, taskCount);
+        }
+
+        throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
     }
 
     /**
