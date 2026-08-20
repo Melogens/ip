@@ -5,8 +5,7 @@ import java.util.Scanner;
  */
 public class DowntownGurl {
     private static final String CHATBOT_NAME = "Downtown Gurl";
-    private static final String DIVIDER = "______________________________________________________________________";
-
+    private static final String DIVIDER = "<*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*>";
     public static void main(String[] args) {
         String banner = """
                  ____                      _                       ____           __\s
