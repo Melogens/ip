@@ -15,18 +15,16 @@ Prerequisites: JDK 25, update Intellij to the most recent version.
    In the same dialog, set the **Project language level** field to the `SDK default` option.
 1. After that, locate the `src/main/java/DowntownGurl.java` file, right-click it, and choose `Run DowntownGurl.main()` (if the code editor is showing compile errors, try restarting the IDE). If the setup is correct, you should see something like the below as the output:
    ```
-   ____________________________________________________________
+   <*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*>
     ____                      _                       ____           __ 
    |  _ \  _____      ___ __ | |_ _____      ___ __  / ___|_   _ _ __| |
    | | | |/ _ \ \ /\ / / '_ \| __/ _ \ \ /\ / / '_ \| |___| | | '__| | |
    | |_| | (_) \ V  V /| | | | || (_) \ V  V /| | | | |_| | |_| | |  | |
    |____/ \___/ \_/\_/ |_| |_|\__\___/ \_/\_/ |_| |_|\____|\__,_|_|  |_|
-   ____________________________________________________________
+   <*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*>
    Hey I'm Downtown Gurl.
-   I'm the one to give you a reality check and help you manifest that life you've been dreaming.
-   ____________________________________________________________
-   That's bombz. Byes!
-   ____________________________________________________________
+   I'm here to give you a reality check and help you manifest that life you've been dreaming.
+   Darling what's up?
    ```
 
 **Warning:** Keep the `src\main\java` folder as the root folder for Java files (i.e., don't rename those folders or move Java files to another folder outside of this folder path), as this is the default location some tools (e.g., Gradle) expect to find Java files.
