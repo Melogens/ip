@@ -34,115 +34,69 @@ public class DowntownGurl {
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNextLine()) {
             String command = scanner.nextLine();
-            if (command.equals("bye")) {
-                System.out.println("That's bombz. Byes!");
-                System.out.println(DIVIDER);
-                break;
-            }
+            try {
+                if (command.equals("bye")) {
+                    System.out.println("That's bombz. Byes!");
+                    System.out.println(DIVIDER);
+                    break;
+                }
 
-            if (command.equals("list")) {
-                printTaskList(tasks, taskCount);
-                continue;
-            }
-
-            if (command.startsWith("mark ")) {
-                Task task = getTaskByNumberFromCommand(tasks, taskCount, command, 5);
-                if (task == null) {
-                    printErrorMessage(UNKNOWN_COMMAND_MESSAGE);
+                if (command.equals("list")) {
+                    printTaskList(tasks, taskCount);
                     continue;
                 }
-                task.markAsDone();
-                printUpdatedTaskMessage("Kays, I've marked this task as done!", task);
-                continue;
-            }
 
-            if (command.startsWith("unmark ")) {
-                Task task = getTaskByNumberFromCommand(tasks, taskCount, command, 7);
-                if (task == null) {
-                    printErrorMessage(UNKNOWN_COMMAND_MESSAGE);
+                if (command.startsWith("mark ")) {
+                    Task task = getTaskByNumberFromCommand(tasks, taskCount, command, 5);
+                    task.markAsDone();
+                    printUpdatedTaskMessage("Kays, I've marked this task as done!", task);
                     continue;
                 }
-                task.markAsNotDone();
-                printUpdatedTaskMessage("Sure, I unmarked it!", task);
-                continue;
-            }
 
-            if (command.equals("todo") || command.startsWith("todo ")) {
-                if (!hasTodoDescription(command)) {
-                    printErrorMessage(EMPTY_TASK_MESSAGE);
+                if (command.startsWith("unmark ")) {
+                    Task task = getTaskByNumberFromCommand(tasks, taskCount, command, 7);
+                    task.markAsNotDone();
+                    printUpdatedTaskMessage("Sure, I unmarked it!", task);
                     continue;
                 }
-                tasks[taskCount] = new Todo(command.substring(5));
-                taskCount = printAddedTaskMessage(tasks, taskCount);
-                continue;
-            }
 
-            if (command.equals("deadline") || command.startsWith("deadline ")) {
-                if (!hasDeadlineDetails(command)) {
-                    printErrorMessage(EMPTY_TASK_MESSAGE);
+                if (command.equals("todo") || command.startsWith("todo ")) {
+                    tasks[taskCount] = createTodo(command);
+                    taskCount = printAddedTaskMessage(tasks, taskCount);
                     continue;
                 }
-                tasks[taskCount] = createDeadline(command);
-                taskCount = printAddedTaskMessage(tasks, taskCount);
-                continue;
-            }
 
-            if (command.equals("event") || command.startsWith("event ")) {
-                if (!hasEventDetails(command)) {
-                    printErrorMessage(EMPTY_TASK_MESSAGE);
+                if (command.equals("deadline") || command.startsWith("deadline ")) {
+                    tasks[taskCount] = createDeadline(command);
+                    taskCount = printAddedTaskMessage(tasks, taskCount);
                     continue;
                 }
-                tasks[taskCount] = createEvent(command);
-                taskCount = printAddedTaskMessage(tasks, taskCount);
-                continue;
-            }
 
-            printErrorMessage(UNKNOWN_COMMAND_MESSAGE);
+                if (command.equals("event") || command.startsWith("event ")) {
+                    tasks[taskCount] = createEvent(command);
+                    taskCount = printAddedTaskMessage(tasks, taskCount);
+                    continue;
+                }
+
+                throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
+            } catch (DowntownGurlException e) {
+                printErrorMessage(e.getMessage());
+            }
         }
     }
 
     /**
-     * Checks whether a todo command includes a non-empty description.
+     * Creates a todo task from a command in this form: todo DESCRIPTION.
      *
      * @param command Full user command.
-     * @return True if the todo description is present.
+     * @return New todo task.
+     * @throws DowntownGurlException If the todo description is missing.
      */
-    private static boolean hasTodoDescription(String command) {
-        return command.length() > 5 && !command.substring(5).isBlank();
-    }
-
-    /**
-     * Checks whether a deadline command includes both a description and a due date/time.
-     *
-     * @param command Full user command.
-     * @return True if all deadline fields are present.
-     */
-    private static boolean hasDeadlineDetails(String command) {
-        int separatorIndex = command.indexOf(DEADLINE_SEPARATOR);
-        if (separatorIndex == -1) {
-            return false;
+    private static Todo createTodo(String command) throws DowntownGurlException {
+        if (command.length() <= 5 || command.substring(5).isBlank()) {
+            throw new DowntownGurlException(EMPTY_TASK_MESSAGE);
         }
-        String description = command.substring(9, separatorIndex);
-        String by = command.substring(separatorIndex + DEADLINE_SEPARATOR.length());
-        return !description.isBlank() && !by.isBlank();
-    }
-
-    /**
-     * Checks whether an event command includes a description, start, and end.
-     *
-     * @param command Full user command.
-     * @return True if all event fields are present.
-     */
-    private static boolean hasEventDetails(String command) {
-        int fromIndex = command.indexOf(EVENT_FROM_SEPARATOR);
-        int toIndex = command.indexOf(EVENT_TO_SEPARATOR);
-        if (fromIndex == -1 || toIndex == -1 || fromIndex >= toIndex) {
-            return false;
-        }
-        String description = command.substring(6, fromIndex);
-        String from = command.substring(fromIndex + EVENT_FROM_SEPARATOR.length(), toIndex);
-        String to = command.substring(toIndex + EVENT_TO_SEPARATOR.length());
-        return !description.isBlank() && !from.isBlank() && !to.isBlank();
+        return new Todo(command.substring(5));
     }
 
     /**
@@ -150,11 +104,18 @@ public class DowntownGurl {
      *
      * @param command Full user command.
      * @return New deadline task.
+     * @throws DowntownGurlException If the description or deadline time is missing.
      */
-    private static Deadline createDeadline(String command) {
+    private static Deadline createDeadline(String command) throws DowntownGurlException {
         int separatorIndex = command.indexOf(DEADLINE_SEPARATOR);
+        if (separatorIndex == -1) {
+            throw new DowntownGurlException(EMPTY_TASK_MESSAGE);
+        }
         String description = command.substring(9, separatorIndex);
         String by = command.substring(separatorIndex + DEADLINE_SEPARATOR.length());
+        if (description.isBlank() || by.isBlank()) {
+            throw new DowntownGurlException(EMPTY_TASK_MESSAGE);
+        }
         return new Deadline(description, by);
     }
 
@@ -163,13 +124,20 @@ public class DowntownGurl {
      *
      * @param command Full user command.
      * @return New event task.
+     * @throws DowntownGurlException If the description, start, or end is missing.
      */
-    private static Event createEvent(String command) {
+    private static Event createEvent(String command) throws DowntownGurlException {
         int fromIndex = command.indexOf(EVENT_FROM_SEPARATOR);
         int toIndex = command.indexOf(EVENT_TO_SEPARATOR);
+        if (fromIndex == -1 || toIndex == -1 || fromIndex >= toIndex) {
+            throw new DowntownGurlException(EMPTY_TASK_MESSAGE);
+        }
         String description = command.substring(6, fromIndex);
         String from = command.substring(fromIndex + EVENT_FROM_SEPARATOR.length(), toIndex);
         String to = command.substring(toIndex + EVENT_TO_SEPARATOR.length());
+        if (description.isBlank() || from.isBlank() || to.isBlank()) {
+            throw new DowntownGurlException(EMPTY_TASK_MESSAGE);
+        }
         return new Event(description, from, to);
     }
 
@@ -180,17 +148,19 @@ public class DowntownGurl {
      * @param taskCount Number of tasks in the list.
      * @param command Full user command.
      * @param taskNumberStartIndex Index where the task number starts.
-     * @return Task selected by the user, or null if the task number is invalid.
+     * @return Task selected by the user.
+     * @throws DowntownGurlException If the task number is not valid.
      */
-    private static Task getTaskByNumberFromCommand(Task[] tasks, int taskCount, String command, int taskNumberStartIndex) {
+    private static Task getTaskByNumberFromCommand(Task[] tasks, int taskCount, String command, int taskNumberStartIndex)
+            throws DowntownGurlException {
         int taskNumber;
         try {
             taskNumber = Integer.parseInt(command.substring(taskNumberStartIndex));
         } catch (NumberFormatException e) {
-            return null;
+            throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
         }
         if (taskNumber < 1 || taskNumber > taskCount) {
-            return null;
+            throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
         }
         return tasks[taskNumber - 1];
     }
