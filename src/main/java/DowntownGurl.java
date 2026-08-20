@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Scanner;
 
 /**
@@ -11,7 +12,6 @@ public class DowntownGurl {
     private static final String EVENT_TO_SEPARATOR = " /to ";
     private static final String EMPTY_TASK_MESSAGE = "Soz queen you gotta at least give me SOMETHING to work with.";
     private static final String UNKNOWN_COMMAND_MESSAGE = "U sleeping alright? Sounds like you ain't...";
-    private static final int EXIT_TASK_COUNT = -1;
 
     public static void main(String[] args) {
         String banner = """
@@ -29,15 +29,13 @@ public class DowntownGurl {
         System.out.println("Darling what's up?");
         System.out.println(DIVIDER);
 
-        Task[] tasks = new Task[100];
-        int taskCount = 0;
+        ArrayList<Task> tasks = new ArrayList<>();
 
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNextLine()) {
             String command = scanner.nextLine();
             try {
-                taskCount = handleCommand(command, tasks, taskCount);
-                if (taskCount == EXIT_TASK_COUNT) {
+                if (handleCommand(command, tasks)) {
                     break;
                 }
             } catch (DowntownGurlException e) {
@@ -47,60 +45,62 @@ public class DowntownGurl {
     }
 
     /**
-     * Handles one user command and returns the updated task count.
+     * Handles one user command.
      *
      * @param command Full user command.
      * @param tasks Current task list.
-     * @param taskCount Number of tasks in the list before handling the command.
-     * @return Updated task count, or EXIT_TASK_COUNT if the user wants to exit.
+     * @return true if the user wants to exit, false otherwise.
      * @throws DowntownGurlException If the command cannot be handled.
      */
-    private static int handleCommand(String command, Task[] tasks, int taskCount) throws DowntownGurlException {
+    private static boolean handleCommand(String command, ArrayList<Task> tasks) throws DowntownGurlException {
         if (command.equals("bye")) {
             System.out.println("That's bombz. Byes!");
             System.out.println(DIVIDER);
-            return EXIT_TASK_COUNT;
+            return true;
         }
 
         if (command.equals("list")) {
-            printTaskList(tasks, taskCount);
-            return taskCount;
+            printTaskList(tasks);
+            return false;
         }
 
         if (command.startsWith("mark ")) {
-            Task task = getTaskByNumberFromCommand(tasks, taskCount, command, 5);
+            Task task = getTaskByNumberFromCommand(tasks, command, 5);
             task.markAsDone();
             printUpdatedTaskMessage("Kays, I've marked this task as done!", task);
-            return taskCount;
+            return false;
         }
 
         if (command.startsWith("unmark ")) {
-            Task task = getTaskByNumberFromCommand(tasks, taskCount, command, 7);
+            Task task = getTaskByNumberFromCommand(tasks, command, 7);
             task.markAsNotDone();
             printUpdatedTaskMessage("Sure, I unmarked it!", task);
-            return taskCount;
+            return false;
         }
 
         if (command.startsWith("delete ")) {
-            int taskIndex = getTaskIndexFromCommand(taskCount, command, 7);
-            Task removedTask = tasks[taskIndex];
-            removeTaskAtIndex(tasks, taskCount, taskIndex);
-            return printDeletedTaskMessage(removedTask, taskCount);
+            int taskIndex = getTaskIndexFromCommand(tasks, command, 7);
+            Task removedTask = tasks.remove(taskIndex);
+            printDeletedTaskMessage(removedTask, tasks.size());
+            return false;
         }
 
         if (command.equals("todo") || command.startsWith("todo ")) {
-            tasks[taskCount] = createTodo(command);
-            return printAddedTaskMessage(tasks, taskCount);
+            tasks.add(createTodo(command));
+            printAddedTaskMessage(tasks.getLast(), tasks.size());
+            return false;
         }
 
         if (command.equals("deadline") || command.startsWith("deadline ")) {
-            tasks[taskCount] = createDeadline(command);
-            return printAddedTaskMessage(tasks, taskCount);
+            tasks.add(createDeadline(command));
+            printAddedTaskMessage(tasks.getLast(), tasks.size());
+            return false;
         }
 
         if (command.equals("event") || command.startsWith("event ")) {
-            tasks[taskCount] = createEvent(command);
-            return printAddedTaskMessage(tasks, taskCount);
+            tasks.add(createEvent(command));
+            printAddedTaskMessage(tasks.getLast(), tasks.size());
+            return false;
         }
 
         throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
@@ -163,30 +163,29 @@ public class DowntownGurl {
     }
 
     /**
-     * Finds the task number in a mark or unmark command and returns the matching task.
+     * Finds the task number in a command and returns the matching task.
      *
      * @param tasks Current task list.
-     * @param taskCount Number of tasks in the list.
      * @param command Full user command.
      * @param taskNumberStartIndex Index where the task number starts.
      * @return Task selected by the user.
      * @throws DowntownGurlException If the task number is not valid.
      */
-    private static Task getTaskByNumberFromCommand(Task[] tasks, int taskCount, String command, int taskNumberStartIndex)
+    private static Task getTaskByNumberFromCommand(ArrayList<Task> tasks, String command, int taskNumberStartIndex)
             throws DowntownGurlException {
-        return tasks[getTaskIndexFromCommand(taskCount, command, taskNumberStartIndex)];
+        return tasks.get(getTaskIndexFromCommand(tasks, command, taskNumberStartIndex));
     }
 
     /**
      * Finds the zero-based task index in a command containing a one-based task number.
      *
-     * @param taskCount Number of tasks in the list.
+     * @param tasks Current task list.
      * @param command Full user command.
      * @param taskNumberStartIndex Index where the task number starts.
      * @return Zero-based index of the task selected by the user.
      * @throws DowntownGurlException If the task number is not valid.
      */
-    private static int getTaskIndexFromCommand(int taskCount, String command, int taskNumberStartIndex)
+    private static int getTaskIndexFromCommand(ArrayList<Task> tasks, String command, int taskNumberStartIndex)
             throws DowntownGurlException {
         int taskNumber;
         try {
@@ -194,36 +193,21 @@ public class DowntownGurl {
         } catch (NumberFormatException e) {
             throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
         }
-        if (taskNumber < 1 || taskNumber > taskCount) {
+        if (taskNumber < 1 || taskNumber > tasks.size()) {
             throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
         }
         return taskNumber - 1;
     }
 
     /**
-     * Removes one task and shifts later tasks forward to keep the array compact.
-     *
-     * @param tasks Current task list.
-     * @param taskCount Number of tasks in the list before removal.
-     * @param taskIndex Zero-based index of the task to remove.
-     */
-    private static void removeTaskAtIndex(Task[] tasks, int taskCount, int taskIndex) {
-        for (int i = taskIndex; i < taskCount - 1; i++) {
-            tasks[i] = tasks[i + 1];
-        }
-        tasks[taskCount - 1] = null;
-    }
-
-    /**
      * Prints all tasks currently in the list.
      *
      * @param tasks Current task list.
-     * @param taskCount Number of tasks in the list.
      */
-    private static void printTaskList(Task[] tasks, int taskCount) {
+    private static void printTaskList(ArrayList<Task> tasks) {
         System.out.println("Here's your tasks:");
-        for (int i = 0; i < taskCount; i++) {
-            System.out.println(" " + (i + 1) + ". " + tasks[i]);
+        for (int i = 0; i < tasks.size(); i++) {
+            System.out.println(" " + (i + 1) + ". " + tasks.get(i));
         }
         System.out.println(DIVIDER);
     }
@@ -243,33 +227,27 @@ public class DowntownGurl {
     /**
      * Prints a confirmation for the newly added task.
      *
-     * @param tasks Current task list.
-     * @param taskCount Number of tasks before the new task is counted.
-     * @return Updated task count.
+     * @param addedTask Task that was added.
+     * @param taskCount Number of tasks after adding the task.
      */
-    private static int printAddedTaskMessage(Task[] tasks, int taskCount) {
-        int updatedTaskCount = taskCount + 1;
+    private static void printAddedTaskMessage(Task addedTask, int taskCount) {
         System.out.println("Gotcha. Noted it downz:");
-        System.out.println("  " + tasks[taskCount]);
-        System.out.println("Now you got " + updatedTaskCount + " tasks in the roster.");
+        System.out.println("  " + addedTask);
+        System.out.println("Now you got " + taskCount + " tasks in the roster.");
         System.out.println(DIVIDER);
-        return updatedTaskCount;
     }
 
     /**
      * Prints a confirmation for the deleted task.
      *
      * @param removedTask Task that was removed.
-     * @param taskCount Number of tasks before removal.
-     * @return Updated task count.
+     * @param taskCount Number of tasks after removing the task.
      */
-    private static int printDeletedTaskMessage(Task removedTask, int taskCount) {
-        int updatedTaskCount = taskCount - 1;
+    private static void printDeletedTaskMessage(Task removedTask, int taskCount) {
         System.out.println("Sure~ I've removed this task:");
         System.out.println("  " + removedTask);
-        System.out.println("Now you got " + updatedTaskCount + " tasks in the list.");
+        System.out.println("Now you got " + taskCount + " tasks in the list.");
         System.out.println(DIVIDER);
-        return updatedTaskCount;
     }
 
     /**
