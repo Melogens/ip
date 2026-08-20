@@ -81,6 +81,13 @@ public class DowntownGurl {
             return taskCount;
         }
 
+        if (command.startsWith("delete ")) {
+            int taskIndex = getTaskIndexFromCommand(taskCount, command, 7);
+            Task removedTask = tasks[taskIndex];
+            removeTaskAtIndex(tasks, taskCount, taskIndex);
+            return printDeletedTaskMessage(removedTask, taskCount);
+        }
+
         if (command.equals("todo") || command.startsWith("todo ")) {
             tasks[taskCount] = createTodo(command);
             return printAddedTaskMessage(tasks, taskCount);
@@ -167,16 +174,44 @@ public class DowntownGurl {
      */
     private static Task getTaskByNumberFromCommand(Task[] tasks, int taskCount, String command, int taskNumberStartIndex)
             throws DowntownGurlException {
+        return tasks[getTaskIndexFromCommand(taskCount, command, taskNumberStartIndex)];
+    }
+
+    /**
+     * Finds the zero-based task index in a command containing a one-based task number.
+     *
+     * @param taskCount Number of tasks in the list.
+     * @param command Full user command.
+     * @param taskNumberStartIndex Index where the task number starts.
+     * @return Zero-based index of the task selected by the user.
+     * @throws DowntownGurlException If the task number is not valid.
+     */
+    private static int getTaskIndexFromCommand(int taskCount, String command, int taskNumberStartIndex)
+            throws DowntownGurlException {
         int taskNumber;
         try {
-            taskNumber = Integer.parseInt(command.substring(taskNumberStartIndex));
+            taskNumber = Integer.parseInt(command.substring(taskNumberStartIndex).trim());
         } catch (NumberFormatException e) {
             throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
         }
         if (taskNumber < 1 || taskNumber > taskCount) {
             throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
         }
-        return tasks[taskNumber - 1];
+        return taskNumber - 1;
+    }
+
+    /**
+     * Removes one task and shifts later tasks forward to keep the array compact.
+     *
+     * @param tasks Current task list.
+     * @param taskCount Number of tasks in the list before removal.
+     * @param taskIndex Zero-based index of the task to remove.
+     */
+    private static void removeTaskAtIndex(Task[] tasks, int taskCount, int taskIndex) {
+        for (int i = taskIndex; i < taskCount - 1; i++) {
+            tasks[i] = tasks[i + 1];
+        }
+        tasks[taskCount - 1] = null;
     }
 
     /**
@@ -217,6 +252,22 @@ public class DowntownGurl {
         System.out.println("Gotcha. Noted it downz:");
         System.out.println("  " + tasks[taskCount]);
         System.out.println("Now you got " + updatedTaskCount + " tasks in the roster.");
+        System.out.println(DIVIDER);
+        return updatedTaskCount;
+    }
+
+    /**
+     * Prints a confirmation for the deleted task.
+     *
+     * @param removedTask Task that was removed.
+     * @param taskCount Number of tasks before removal.
+     * @return Updated task count.
+     */
+    private static int printDeletedTaskMessage(Task removedTask, int taskCount) {
+        int updatedTaskCount = taskCount - 1;
+        System.out.println("Sure~ I've removed this task:");
+        System.out.println("  " + removedTask);
+        System.out.println("Now you got " + updatedTaskCount + " tasks in the list.");
         System.out.println(DIVIDER);
         return updatedTaskCount;
     }
