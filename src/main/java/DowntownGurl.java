@@ -22,6 +22,9 @@ public class DowntownGurl {
         System.out.println("Darling what's up?");
         System.out.println(DIVIDER);
 
+        String[] tasks = new String[100];
+        int taskCount = 0;
+
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNextLine()) {
             String command = scanner.nextLine();
@@ -30,7 +33,18 @@ public class DowntownGurl {
                 System.out.println(DIVIDER);
                 break;
             }
-            System.out.println(command);
+
+            if (command.equals("list")) {
+                for (int i = 0; i < taskCount; i++) {
+                    System.out.println(" " + (i + 1) + ". " + tasks[i]);
+                }
+                System.out.println(DIVIDER);
+                continue;
+            }
+
+            tasks[taskCount] = command;
+            taskCount++;
+            System.out.println("added: " + command);
             System.out.println(DIVIDER);
         }
     }
