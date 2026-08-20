@@ -17,12 +17,12 @@ public class DowntownGurl {
         System.out.println(banner);
         System.out.println(DIVIDER);
         System.out.println("Hey I'm " + CHATBOT_NAME + ".");
-        System.out.println("I'm the one to give you a reality check and help you manifest that life you've been dreaming.");
+        System.out.println("I'm the one to give you a reality check " +
+                "and help you manifest that life you've been dreaming.");
         System.out.println("Darling what's up?");
         System.out.println(DIVIDER);
 
-        String[] tasks = new String[100];
-        boolean[] isDone = new boolean[100];
+        Task[] tasks = new Task[100];
         int taskCount = 0;
 
         Scanner scanner = new Scanner(System.in);
@@ -37,8 +37,7 @@ public class DowntownGurl {
             if (command.equals("list")) {
                 System.out.println("Here's your tasks:");
                 for (int i = 0; i < taskCount; i++) {
-                    String statusIcon = isDone[i] ? "[X]" : "[ ]";
-                    System.out.println(" " + (i + 1) + ". " + statusIcon + " " + tasks[i]);
+                    System.out.println(" " + (i + 1) + ". " + tasks[i]);
                 }
                 System.out.println(DIVIDER);
                 continue;
@@ -47,9 +46,9 @@ public class DowntownGurl {
             if (command.startsWith("mark ")) {
                 int taskNumber = Integer.parseInt(command.substring(5));
                 int taskIndex = taskNumber - 1;
-                isDone[taskIndex] = true;
+                tasks[taskIndex].markAsDone();
                 System.out.println("Kays, I've marked this task as done!");
-                System.out.println("  [X] " + tasks[taskIndex]);
+                System.out.println("  " + tasks[taskIndex]);
                 System.out.println(DIVIDER);
                 continue;
             }
@@ -57,14 +56,14 @@ public class DowntownGurl {
             if (command.startsWith("unmark ")) {
                 int taskNumber = Integer.parseInt(command.substring(7));
                 int taskIndex = taskNumber - 1;
-                isDone[taskIndex] = false;
+                tasks[taskIndex].markAsNotDone();
                 System.out.println("Sure, I unmarked it!");
-                System.out.println("  [ ] " + tasks[taskIndex]);
+                System.out.println("  " + tasks[taskIndex]);
                 System.out.println(DIVIDER);
                 continue;
             }
 
-            tasks[taskCount] = command;
+            tasks[taskCount] = new Task(command);
             taskCount++;
             System.out.println("added: " + command);
             System.out.println(DIVIDER);
