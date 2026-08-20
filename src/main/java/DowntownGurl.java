@@ -22,6 +22,7 @@ public class DowntownGurl {
         System.out.println(DIVIDER);
 
         String[] tasks = new String[100];
+        boolean[] isDone = new boolean[100];
         int taskCount = 0;
 
         Scanner scanner = new Scanner(System.in);
@@ -34,9 +35,21 @@ public class DowntownGurl {
             }
 
             if (command.equals("list")) {
+                System.out.println("Here's your tasks:");
                 for (int i = 0; i < taskCount; i++) {
-                    System.out.println(" " + (i + 1) + ". " + tasks[i]);
+                    String statusIcon = isDone[i] ? "[X]" : "[ ]";
+                    System.out.println(" " + (i + 1) + ". " + statusIcon + " " + tasks[i]);
                 }
+                System.out.println(DIVIDER);
+                continue;
+            }
+
+            if (command.startsWith("mark ")) {
+                int taskNumber = Integer.parseInt(command.substring(5));
+                int taskIndex = taskNumber - 1;
+                isDone[taskIndex] = true;
+                System.out.println("Kays, I've marked this task as done!");
+                System.out.println("  [X] " + tasks[taskIndex]);
                 System.out.println(DIVIDER);
                 continue;
             }
