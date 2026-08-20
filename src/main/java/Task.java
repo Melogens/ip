@@ -38,8 +38,26 @@ public class Task {
         return this.isDone ? "X" : " ";
     }
 
+    /**
+     * Returns the symbol used to identify this task type.
+     *
+     * @return Task type symbol.
+     */
+    protected String getTypeIcon() {
+        return " ";
+    }
+
+    /**
+     * Returns the user-provided details of this task.
+     *
+     * @return Task description.
+     */
+    protected String getDescription() {
+        return this.description;
+    }
+
     @Override
     public String toString() {
-        return "[" + getStatusIcon() + "] " + this.description;
+        return "[" + getTypeIcon() + "][" + getStatusIcon() + "] " + this.description;
     }
 }
