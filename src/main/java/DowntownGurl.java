@@ -1,7 +1,4 @@
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Scanner;
@@ -16,16 +13,12 @@ public class DowntownGurl {
     private static final String EVENT_FROM_SEPARATOR = " /from ";
     private static final String EVENT_TO_SEPARATOR = " /to ";
     private static final Path TASK_FILE_PATH = Path.of("data", "downtownGurl.txt");
-    private static final String STORAGE_SEPARATOR = " * ";
-    private static final String STORAGE_DONE_STATUS = "Done";
-    private static final String STORAGE_NOT_DONE_STATUS = "Not done";
     private static final String EMPTY_TASK_MESSAGE = "Soz queen you gotta at least give me SOMETHING to work with.";
     private static final String DEADLINE_FORMAT_HINT = EMPTY_TASK_MESSAGE
             + "\nMaybe you could try formatting it as: deadline <task name> /by dd/mm/yyyy time";
     private static final String EVENT_FORMAT_HINT = EMPTY_TASK_MESSAGE
             + "\nMaybe you could try formatting it as: event <event name> /from dd/mm/yyyy time /to dd/mm/yyyy time";
     private static final String UNKNOWN_COMMAND_MESSAGE = "U sleeping alright? Sounds like you ain't...";
-    private static final String SAVE_ERROR_MESSAGE = "Oops, I couldn't save your tasks to disk.";
     private static final String LOAD_ERROR_MESSAGE = "Oops, I couldn't load your tasks from disk.";
     private static final String CORRUPTED_LINE_MESSAGE = "I skipped a corrupted saved task on line ";
 
@@ -45,13 +38,14 @@ public class DowntownGurl {
         System.out.println(DIVIDER);
         System.out.println("Darling what's up?");
 
-        ArrayList<Task> tasks = loadTasks();
+        Storage storage = new Storage(TASK_FILE_PATH);
+        ArrayList<Task> tasks = loadTasks(storage);
 
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNextLine()) {
             String command = scanner.nextLine();
             try {
-                if (handleCommand(command, tasks)) {
+                if (handleCommand(command, tasks, storage)) {
                     break;
                 }
             } catch (DowntownGurlException e) {
@@ -65,10 +59,12 @@ public class DowntownGurl {
      *
      * @param command Full user command.
      * @param tasks Current task list.
+     * @param storage Storage helper used to save task changes.
      * @return true if the user wants to exit, false otherwise.
      * @throws DowntownGurlException If the command cannot be handled.
      */
-    private static boolean handleCommand(String command, ArrayList<Task> tasks) throws DowntownGurlException {
+    private static boolean handleCommand(String command, ArrayList<Task> tasks, Storage storage)
+            throws DowntownGurlException {
         if (command.equals("bye")) {
             System.out.println("That's bombz. Byes!");
             System.out.println(DIVIDER);
@@ -85,7 +81,7 @@ public class DowntownGurl {
             boolean wasDone = task.isDone();
             task.markAsDone();
             try {
-                saveTasks(tasks);
+                storage.saveTasks(tasks);
             } catch (DowntownGurlException e) {
                 restoreTaskStatus(task, wasDone);
                 throw e;
@@ -99,7 +95,7 @@ public class DowntownGurl {
             boolean wasDone = task.isDone();
             task.markAsNotDone();
             try {
-                saveTasks(tasks);
+                storage.saveTasks(tasks);
             } catch (DowntownGurlException e) {
                 restoreTaskStatus(task, wasDone);
                 throw e;
@@ -112,7 +108,7 @@ public class DowntownGurl {
             int taskIndex = getTaskIndexFromCommand(tasks, command, 7);
             Task removedTask = tasks.remove(taskIndex);
             try {
-                saveTasks(tasks);
+                storage.saveTasks(tasks);
             } catch (DowntownGurlException e) {
                 tasks.add(taskIndex, removedTask);
                 throw e;
@@ -123,21 +119,21 @@ public class DowntownGurl {
 
         if (command.equals("todo") || command.startsWith("todo ")) {
             Task addedTask = createTodo(command);
-            addTask(tasks, addedTask);
+            addTask(tasks, addedTask, storage);
             printAddedTaskMessage(addedTask, tasks.size());
             return false;
         }
 
         if (command.equals("deadline") || command.startsWith("deadline ")) {
             Task addedTask = createDeadline(command);
-            addTask(tasks, addedTask);
+            addTask(tasks, addedTask, storage);
             printAddedTaskMessage(addedTask, tasks.size());
             return false;
         }
 
         if (command.equals("event") || command.startsWith("event ")) {
             Task addedTask = createEvent(command);
-            addTask(tasks, addedTask);
+            addTask(tasks, addedTask, storage);
             printAddedTaskMessage(addedTask, tasks.size());
             return false;
         }
@@ -251,12 +247,13 @@ public class DowntownGurl {
      *
      * @param tasks Current task list.
      * @param addedTask Task to add.
+     * @param storage Storage helper used to save the updated task list.
      * @throws DowntownGurlException If the updated task list cannot be saved.
      */
-    private static void addTask(ArrayList<Task> tasks, Task addedTask) throws DowntownGurlException {
+    private static void addTask(ArrayList<Task> tasks, Task addedTask, Storage storage) throws DowntownGurlException {
         tasks.add(addedTask);
         try {
-            saveTasks(tasks);
+            storage.saveTasks(tasks);
         } catch (DowntownGurlException e) {
             tasks.remove(tasks.size() - 1);
             throw e;
@@ -280,230 +277,19 @@ public class DowntownGurl {
     /**
      * Loads tasks from the data file if it already exists.
      *
+     * @param storage Storage helper used to load saved tasks.
      * @return Task list from the data file, or an empty list if the file does not exist.
      */
-    private static ArrayList<Task> loadTasks() {
-        ArrayList<Task> tasks = new ArrayList<>();
-        if (!Files.exists(TASK_FILE_PATH)) {
+    private static ArrayList<Task> loadTasks(Storage storage) {
+        try {
+            ArrayList<Task> tasks = storage.loadTasks();
+            for (int lineNumber : storage.getCorruptedLineNumbers()) {
+                printErrorMessage(CORRUPTED_LINE_MESSAGE + lineNumber + ".");
+            }
             return tasks;
-        }
-
-        try {
-            ArrayList<String> taskLines = new ArrayList<>(Files.readAllLines(TASK_FILE_PATH));
-            for (int i = 0; i < taskLines.size(); i++) {
-                String taskLine = taskLines.get(i);
-                if (taskLine.isBlank()) {
-                    continue;
-                }
-                try {
-                    tasks.add(createTaskFromStorageLine(taskLine));
-                } catch (DowntownGurlException e) {
-                    printErrorMessage(CORRUPTED_LINE_MESSAGE + (i + 1) + ".");
-                }
-            }
-        } catch (IOException e) {
+        } catch (DowntownGurlException e) {
             printErrorMessage(LOAD_ERROR_MESSAGE);
-        }
-        return tasks;
-    }
-
-    /**
-     * Creates a task from one line in the data file.
-     *
-     * @param taskLine One saved task line.
-     * @return Task represented by the saved line.
-     * @throws DowntownGurlException If the saved line is not in the expected format.
-     */
-    private static Task createTaskFromStorageLine(String taskLine) throws DowntownGurlException {
-        String[] parts = taskLine.split("\\Q" + STORAGE_SEPARATOR + "\\E", -1);
-        if (parts.length < 3 || parts[0].isBlank() || parts[1].isBlank()) {
-            throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
-        }
-
-        Task task = switch (parts[0]) {
-        case "T" -> createTodoFromStorageParts(parts);
-        case "D" -> createDeadlineFromStorageParts(parts);
-        case "E" -> createEventFromStorageParts(parts);
-        default -> throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
-        };
-
-        if (parts[1].equals(STORAGE_DONE_STATUS)) {
-            task.markAsDone();
-        } else if (!parts[1].equals(STORAGE_NOT_DONE_STATUS)) {
-            throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
-        }
-        return task;
-    }
-
-    /**
-     * Creates a todo from saved fields.
-     *
-     * @param parts Saved task fields.
-     * @return Todo represented by the saved fields.
-     * @throws DowntownGurlException If the fields are not in the expected format.
-     */
-    private static Todo createTodoFromStorageParts(String[] parts) throws DowntownGurlException {
-        if (parts.length != 3 || parts[2].isBlank()) {
-            throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
-        }
-        return new Todo(unescapeStorageField(parts[2]));
-    }
-
-    /**
-     * Creates a deadline from saved fields.
-     *
-     * @param parts Saved task fields.
-     * @return Deadline represented by the saved fields.
-     * @throws DowntownGurlException If the fields are not in the expected format.
-     */
-    private static Deadline createDeadlineFromStorageParts(String[] parts) throws DowntownGurlException {
-        if (parts.length == 4) {
-            String description = unescapeStorageField(parts[2]);
-            String by = unescapeStorageField(parts[3]);
-            if (description.isBlank() || by.isBlank()) {
-                throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
-            }
-            return new Deadline(description, TaskDateTime.parseFromStorage(by));
-        }
-        if (parts.length != 3 || parts[2].isBlank()) {
-            throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
-        }
-        return createDeadlineFromOldStorageDetails(parts[2]);
-    }
-
-    /**
-     * Creates a deadline from old saved details in this form: DESCRIPTION, BY.
-     *
-     * @param details Old saved deadline details.
-     * @return Deadline represented by the old saved details.
-     * @throws DowntownGurlException If the old details are not in the expected format.
-     */
-    private static Deadline createDeadlineFromOldStorageDetails(String details) throws DowntownGurlException {
-        int separatorIndex = details.lastIndexOf(", ");
-        if (separatorIndex == -1 || details.substring(0, separatorIndex).isBlank()
-                || details.substring(separatorIndex + 2).isBlank()) {
-            throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
-        }
-        return new Deadline(details.substring(0, separatorIndex),
-                TaskDateTime.parseFromStorage(details.substring(separatorIndex + 2)));
-    }
-
-    /**
-     * Creates an event from saved fields.
-     *
-     * @param parts Saved task fields.
-     * @return Event represented by the saved fields.
-     * @throws DowntownGurlException If the fields are not in the expected format.
-     */
-    private static Event createEventFromStorageParts(String[] parts) throws DowntownGurlException {
-        if (parts.length == 5) {
-            String description = unescapeStorageField(parts[2]);
-            String from = unescapeStorageField(parts[3]);
-            String to = unescapeStorageField(parts[4]);
-            if (description.isBlank() || from.isBlank() || to.isBlank()) {
-                throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
-            }
-            return new Event(description, TaskDateTime.parseFromStorage(from), TaskDateTime.parseFromStorage(to));
-        }
-        if (parts.length != 3 || parts[2].isBlank()) {
-            throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
-        }
-        return createEventFromOldStorageDetails(parts[2]);
-    }
-
-    /**
-     * Creates an event from old saved details in this form: DESCRIPTION, FROM-TO.
-     *
-     * @param details Old saved event details.
-     * @return Event represented by the old saved details.
-     * @throws DowntownGurlException If the old details are not in the expected format.
-     */
-    private static Event createEventFromOldStorageDetails(String details) throws DowntownGurlException {
-        int detailsSeparatorIndex = details.lastIndexOf(", ");
-        int timeSeparatorIndex = details.lastIndexOf("-");
-        if (detailsSeparatorIndex == -1 || timeSeparatorIndex == -1 || timeSeparatorIndex <= detailsSeparatorIndex + 2) {
-            throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
-        }
-        String description = details.substring(0, detailsSeparatorIndex);
-        String from = details.substring(detailsSeparatorIndex + 2, timeSeparatorIndex);
-        String to = details.substring(timeSeparatorIndex + 1);
-        if (description.isBlank() || from.isBlank() || to.isBlank()) {
-            throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
-        }
-        return new Event(description, TaskDateTime.parseFromStorage(from), TaskDateTime.parseFromStorage(to));
-    }
-
-    /**
-     * Restores special characters from a saved field.
-     *
-     * @param field Saved field.
-     * @return Unescaped field.
-     * @throws DowntownGurlException If the saved field has an invalid escape sequence.
-     */
-    private static String unescapeStorageField(String field) throws DowntownGurlException {
-        StringBuilder unescapedField = new StringBuilder();
-        boolean isEscaping = false;
-        for (int i = 0; i < field.length(); i++) {
-            char character = field.charAt(i);
-            if (isEscaping) {
-                switch (character) {
-                case '\\' -> unescapedField.append('\\');
-                case 'r' -> unescapedField.append('\r');
-                case 'n' -> unescapedField.append('\n');
-                case '*' -> unescapedField.append('*');
-                default -> throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
-                }
-                isEscaping = false;
-            } else if (character == '\\') {
-                isEscaping = true;
-            } else {
-                unescapedField.append(character);
-            }
-        }
-        if (isEscaping) {
-            throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
-        }
-        return unescapedField.toString();
-    }
-
-    /**
-     * Saves all current tasks to the data file.
-     *
-     * @param tasks Current task list.
-     * @throws DowntownGurlException If the data file cannot be written.
-     */
-    private static void saveTasks(ArrayList<Task> tasks) throws DowntownGurlException {
-        ArrayList<String> taskLines = new ArrayList<>();
-        for (Task task : tasks) {
-            taskLines.add(task.toStorageString());
-        }
-
-        Path tempFilePath = null;
-        try {
-            Files.createDirectories(TASK_FILE_PATH.getParent());
-            tempFilePath = Files.createTempFile(TASK_FILE_PATH.getParent(), "downtownGurl", ".tmp");
-            Files.write(tempFilePath, taskLines);
-            Files.move(tempFilePath, TASK_FILE_PATH, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            throw new DowntownGurlException(SAVE_ERROR_MESSAGE);
-        } finally {
-            deleteTempFile(tempFilePath);
-        }
-    }
-
-    /**
-     * Deletes a temporary save file if one was left behind.
-     *
-     * @param tempFilePath Temporary file to delete.
-     */
-    private static void deleteTempFile(Path tempFilePath) {
-        if (tempFilePath == null) {
-            return;
-        }
-        try {
-            Files.deleteIfExists(tempFilePath);
-        } catch (IOException e) {
-            // The main save result has already been reported, so this cleanup error can be ignored.
+            return new ArrayList<>();
         }
     }
 
