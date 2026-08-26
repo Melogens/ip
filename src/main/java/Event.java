@@ -20,7 +20,7 @@ public class Event extends Task {
 
     @Override
     public String toStorageString() {
-        return super.toStorageString() + ", " + this.from + "-" + this.to;
+        return super.toStorageString() + " * " + escapeStorageField(this.from) + " * " + escapeStorageField(this.to);
     }
 
     @Override
