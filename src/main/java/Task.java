@@ -50,6 +50,16 @@ public class Task {
         return this.type.getIcon();
     }
 
+    /**
+     * Returns a line of text that can be saved in the data file.
+     *
+     * @return Data file representation of this task.
+     */
+    public String toStorageString() {
+        String status = this.isDone ? "Done" : "Not done";
+        return this.type.getIcon() + " * " + status + " * " + this.description;
+    }
+
     @Override
     public String toString() {
         return "[" + getTypeIcon() + "][" + getStatusIcon() + "] " + this.description;

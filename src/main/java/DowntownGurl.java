@@ -1,3 +1,6 @@
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -10,8 +13,10 @@ public class DowntownGurl {
     private static final String DEADLINE_SEPARATOR = " /by ";
     private static final String EVENT_FROM_SEPARATOR = " /from ";
     private static final String EVENT_TO_SEPARATOR = " /to ";
+    private static final Path TASK_FILE_PATH = Path.of("data", "downtownGurl.txt");
     private static final String EMPTY_TASK_MESSAGE = "Soz queen you gotta at least give me SOMETHING to work with.";
     private static final String UNKNOWN_COMMAND_MESSAGE = "U sleeping alright? Sounds like you ain't...";
+    private static final String SAVE_ERROR_MESSAGE = "Oops, I couldn't save your tasks to disk.";
 
     public static void main(String[] args) {
         String banner = """
@@ -26,8 +31,8 @@ public class DowntownGurl {
         System.out.println("Hey I'm " + CHATBOT_NAME + ".");
         System.out.println("I'm here to give you a reality check " +
                 "and help you manifest that life you've been dreaming.");
-        System.out.println("Darling what's up?");
         System.out.println(DIVIDER);
+        System.out.println("Darling what's up?");
 
         ArrayList<Task> tasks = new ArrayList<>();
 
@@ -67,6 +72,7 @@ public class DowntownGurl {
         if (command.startsWith("mark ")) {
             Task task = getTaskByNumberFromCommand(tasks, command, 5);
             task.markAsDone();
+            saveTasks(tasks);
             printUpdatedTaskMessage("Kays, I've marked this task as done!", task);
             return false;
         }
@@ -74,6 +80,7 @@ public class DowntownGurl {
         if (command.startsWith("unmark ")) {
             Task task = getTaskByNumberFromCommand(tasks, command, 7);
             task.markAsNotDone();
+            saveTasks(tasks);
             printUpdatedTaskMessage("Sure, I unmarked it!", task);
             return false;
         }
@@ -81,24 +88,28 @@ public class DowntownGurl {
         if (command.startsWith("delete ")) {
             int taskIndex = getTaskIndexFromCommand(tasks, command, 7);
             Task removedTask = tasks.remove(taskIndex);
+            saveTasks(tasks);
             printDeletedTaskMessage(removedTask, tasks.size());
             return false;
         }
 
         if (command.equals("todo") || command.startsWith("todo ")) {
             tasks.add(createTodo(command));
+            saveTasks(tasks);
             printAddedTaskMessage(tasks.getLast(), tasks.size());
             return false;
         }
 
         if (command.equals("deadline") || command.startsWith("deadline ")) {
             tasks.add(createDeadline(command));
+            saveTasks(tasks);
             printAddedTaskMessage(tasks.getLast(), tasks.size());
             return false;
         }
 
         if (command.equals("event") || command.startsWith("event ")) {
             tasks.add(createEvent(command));
+            saveTasks(tasks);
             printAddedTaskMessage(tasks.getLast(), tasks.size());
             return false;
         }
@@ -197,6 +208,26 @@ public class DowntownGurl {
             throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
         }
         return taskNumber - 1;
+    }
+
+    /**
+     * Saves all current tasks to the data file.
+     *
+     * @param tasks Current task list.
+     * @throws DowntownGurlException If the data file cannot be written.
+     */
+    private static void saveTasks(ArrayList<Task> tasks) throws DowntownGurlException {
+        ArrayList<String> taskLines = new ArrayList<>();
+        for (Task task : tasks) {
+            taskLines.add(task.toStorageString());
+        }
+
+        try {
+            Files.createDirectories(TASK_FILE_PATH.getParent());
+            Files.write(TASK_FILE_PATH, taskLines);
+        } catch (IOException e) {
+            throw new DowntownGurlException(SAVE_ERROR_MESSAGE);
+        }
     }
 
     /**
