@@ -27,6 +27,11 @@ public class Event extends Task {
     }
 
     @Override
+    public LocalDateTime getSortDateTime() {
+        return this.from;
+    }
+
+    @Override
     public String toString() {
         return super.toString() + " (from: " + TaskDateTime.formatForDisplay(this.from)
                 + " to: " + TaskDateTime.formatForDisplay(this.to) + ")";

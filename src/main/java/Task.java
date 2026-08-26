@@ -1,3 +1,5 @@
+import java.time.LocalDateTime;
+
 /**
  * Represents one task tracked by the chatbot.
  */
@@ -59,6 +61,15 @@ public class Task {
      */
     protected String getTypeIcon() {
         return this.type.getIcon();
+    }
+
+    /**
+     * Returns the date-time used when sorting this task in the task list.
+     *
+     * @return Date-time for dated tasks, or null for tasks without dates.
+     */
+    public LocalDateTime getSortDateTime() {
+        return null;
     }
 
     /**
