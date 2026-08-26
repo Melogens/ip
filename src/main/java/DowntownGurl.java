@@ -14,15 +14,19 @@ public class DowntownGurl {
     private static final String EVENT_FROM_SEPARATOR = " /from ";
     private static final String EVENT_TO_SEPARATOR = " /to ";
     private static final Path TASK_FILE_PATH = Path.of("data", "downtownGurl.txt");
+    private static final String STORAGE_SEPARATOR = " * ";
+    private static final String STORAGE_DONE_STATUS = "Done";
+    private static final String STORAGE_NOT_DONE_STATUS = "Not done";
     private static final String EMPTY_TASK_MESSAGE = "Soz queen you gotta at least give me SOMETHING to work with.";
     private static final String UNKNOWN_COMMAND_MESSAGE = "U sleeping alright? Sounds like you ain't...";
     private static final String SAVE_ERROR_MESSAGE = "Oops, I couldn't save your tasks to disk.";
+    private static final String LOAD_ERROR_MESSAGE = "Oops, I couldn't load your tasks from disk.";
 
     public static void main(String[] args) {
         String banner = """
                  ____                      _                       ____           __\s
                 |  _ \\  _____      ___ __ | |_ _____      ___ __  / ___|_   _ _ __| |
-                | | | |/ _ \\ \\ /\\ / / '_ \\| __/ _ \\ \\ /\\ / / '_ \\| |___| | | '__| | |
+                | | | |/ _ \\ \\ /\\ / / '_ \\| __/ _ \\ \\ /\\ / / '_ \\| |___| | | ' __|| |
                 | |_| | (_) \\ V  V /| | | | || (_) \\ V  V /| | | | |_| | |_| | |  | |
                 |____/ \\___/ \\_/\\_/ |_| |_|\\__\\___/ \\_/\\_/ |_| |_|\\____|\\__,_|_|  |_|""";
         System.out.println(DIVIDER);
@@ -34,7 +38,7 @@ public class DowntownGurl {
         System.out.println(DIVIDER);
         System.out.println("Darling what's up?");
 
-        ArrayList<Task> tasks = new ArrayList<>();
+        ArrayList<Task> tasks = loadTasks();
 
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNextLine()) {
@@ -208,6 +212,89 @@ public class DowntownGurl {
             throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
         }
         return taskNumber - 1;
+    }
+
+    /**
+     * Loads tasks from the data file if it already exists.
+     *
+     * @return Task list from the data file, or an empty list if the file does not exist.
+     */
+    private static ArrayList<Task> loadTasks() {
+        ArrayList<Task> tasks = new ArrayList<>();
+        if (!Files.exists(TASK_FILE_PATH)) {
+            return tasks;
+        }
+
+        try {
+            for (String taskLine : Files.readAllLines(TASK_FILE_PATH)) {
+                tasks.add(createTaskFromStorageLine(taskLine));
+            }
+        } catch (IOException | DowntownGurlException e) {
+            printErrorMessage(LOAD_ERROR_MESSAGE);
+        }
+        return tasks;
+    }
+
+    /**
+     * Creates a task from one line in the data file.
+     *
+     * @param taskLine One saved task line.
+     * @return Task represented by the saved line.
+     * @throws DowntownGurlException If the saved line is not in the expected format.
+     */
+    private static Task createTaskFromStorageLine(String taskLine) throws DowntownGurlException {
+        String[] parts = taskLine.split("\\Q" + STORAGE_SEPARATOR + "\\E", 3);
+        if (parts.length != 3) {
+            throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
+        }
+
+        Task task = switch (parts[0]) {
+        case "T" -> new Todo(parts[2]);
+        case "D" -> createDeadlineFromStorageDetails(parts[2]);
+        case "E" -> createEventFromStorageDetails(parts[2]);
+        default -> throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
+        };
+
+        if (parts[1].equals(STORAGE_DONE_STATUS)) {
+            task.markAsDone();
+        } else if (!parts[1].equals(STORAGE_NOT_DONE_STATUS)) {
+            throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
+        }
+        return task;
+    }
+
+    /**
+     * Creates a deadline from saved details in this form: DESCRIPTION, BY.
+     *
+     * @param details Saved deadline details.
+     * @return Deadline represented by the saved details.
+     * @throws DowntownGurlException If the details are not in the expected format.
+     */
+    private static Deadline createDeadlineFromStorageDetails(String details) throws DowntownGurlException {
+        int separatorIndex = details.indexOf(", ");
+        if (separatorIndex == -1) {
+            throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
+        }
+        return new Deadline(details.substring(0, separatorIndex), details.substring(separatorIndex + 2));
+    }
+
+    /**
+     * Creates an event from saved details in this form: DESCRIPTION, FROM-TO.
+     *
+     * @param details Saved event details.
+     * @return Event represented by the saved details.
+     * @throws DowntownGurlException If the details are not in the expected format.
+     */
+    private static Event createEventFromStorageDetails(String details) throws DowntownGurlException {
+        int detailsSeparatorIndex = details.indexOf(", ");
+        int timeSeparatorIndex = details.indexOf("-", detailsSeparatorIndex + 2);
+        if (detailsSeparatorIndex == -1 || timeSeparatorIndex == -1) {
+            throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
+        }
+        String description = details.substring(0, detailsSeparatorIndex);
+        String from = details.substring(detailsSeparatorIndex + 2, timeSeparatorIndex);
+        String to = details.substring(timeSeparatorIndex + 1);
+        return new Event(description, from, to);
     }
 
     /**
