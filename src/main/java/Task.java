@@ -2,6 +2,8 @@
  * Represents one task tracked by the chatbot.
  */
 public class Task {
+    private static final String STORAGE_FIELD_SEPARATOR = " * ";
+
     private final String description;
     private final TaskType type;
     private boolean isDone;
@@ -42,12 +44,45 @@ public class Task {
     }
 
     /**
+     * Returns whether this task has been marked as done.
+     *
+     * @return true if the task is done, false otherwise.
+     */
+    public boolean isDone() {
+        return this.isDone;
+    }
+
+    /**
      * Returns the symbol used to identify this task type.
      *
      * @return Task type symbol.
      */
     protected String getTypeIcon() {
         return this.type.getIcon();
+    }
+
+    /**
+     * Returns a line of text that can be saved in the data file.
+     *
+     * @return Data file representation of this task.
+     */
+    public String toStorageString() {
+        String status = this.isDone ? "Done" : "Not done";
+        return this.type.getIcon() + STORAGE_FIELD_SEPARATOR + status + STORAGE_FIELD_SEPARATOR
+                + escapeStorageField(this.description);
+    }
+
+    /**
+     * Escapes special characters before writing a field to the data file.
+     *
+     * @param field Field to save.
+     * @return Escaped field.
+     */
+    protected String escapeStorageField(String field) {
+        return field.replace("\\", "\\\\")
+                .replace("\r", "\\r")
+                .replace("\n", "\\n")
+                .replace("*", "\\*");
     }
 
     @Override
