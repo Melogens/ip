@@ -20,6 +20,10 @@ public class DowntownGurl {
     private static final String STORAGE_DONE_STATUS = "Done";
     private static final String STORAGE_NOT_DONE_STATUS = "Not done";
     private static final String EMPTY_TASK_MESSAGE = "Soz queen you gotta at least give me SOMETHING to work with.";
+    private static final String DEADLINE_FORMAT_HINT = EMPTY_TASK_MESSAGE
+            + "\nMaybe you could try formatting it as: deadline <task name> /by dd/mm/yyyy time";
+    private static final String EVENT_FORMAT_HINT = EMPTY_TASK_MESSAGE
+            + "\nMaybe you could try formatting it as: event <event name> /from dd/mm/yyyy time /to dd/mm/yyyy time";
     private static final String UNKNOWN_COMMAND_MESSAGE = "U sleeping alright? Sounds like you ain't...";
     private static final String SAVE_ERROR_MESSAGE = "Oops, I couldn't save your tasks to disk.";
     private static final String LOAD_ERROR_MESSAGE = "Oops, I couldn't load your tasks from disk.";
@@ -165,14 +169,18 @@ public class DowntownGurl {
     private static Deadline createDeadline(String command) throws DowntownGurlException {
         int separatorIndex = command.indexOf(DEADLINE_SEPARATOR);
         if (separatorIndex == -1) {
-            throw new DowntownGurlException(EMPTY_TASK_MESSAGE);
+            throw new DowntownGurlException(DEADLINE_FORMAT_HINT);
         }
         String description = command.substring(9, separatorIndex);
         String by = command.substring(separatorIndex + DEADLINE_SEPARATOR.length());
         if (description.isBlank() || by.isBlank()) {
-            throw new DowntownGurlException(EMPTY_TASK_MESSAGE);
+            throw new DowntownGurlException(DEADLINE_FORMAT_HINT);
         }
-        return new Deadline(description, TaskDateTime.parse(by));
+        try {
+            return new Deadline(description, TaskDateTime.parse(by));
+        } catch (DowntownGurlException e) {
+            throw new DowntownGurlException(DEADLINE_FORMAT_HINT);
+        }
     }
 
     /**
@@ -186,15 +194,19 @@ public class DowntownGurl {
         int fromIndex = command.indexOf(EVENT_FROM_SEPARATOR);
         int toIndex = command.indexOf(EVENT_TO_SEPARATOR);
         if (fromIndex == -1 || toIndex == -1 || fromIndex >= toIndex) {
-            throw new DowntownGurlException(EMPTY_TASK_MESSAGE);
+            throw new DowntownGurlException(EVENT_FORMAT_HINT);
         }
         String description = command.substring(6, fromIndex);
         String from = command.substring(fromIndex + EVENT_FROM_SEPARATOR.length(), toIndex);
         String to = command.substring(toIndex + EVENT_TO_SEPARATOR.length());
         if (description.isBlank() || from.isBlank() || to.isBlank()) {
-            throw new DowntownGurlException(EMPTY_TASK_MESSAGE);
+            throw new DowntownGurlException(EVENT_FORMAT_HINT);
         }
-        return new Event(description, TaskDateTime.parse(from), TaskDateTime.parse(to));
+        try {
+            return new Event(description, TaskDateTime.parse(from), TaskDateTime.parse(to));
+        } catch (DowntownGurlException e) {
+            throw new DowntownGurlException(EVENT_FORMAT_HINT);
+        }
     }
 
     /**
