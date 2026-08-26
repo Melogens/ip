@@ -171,7 +171,7 @@ public class DowntownGurl {
         if (description.isBlank() || by.isBlank()) {
             throw new DowntownGurlException(EMPTY_TASK_MESSAGE);
         }
-        return new Deadline(description, by);
+        return new Deadline(description, TaskDateTime.parse(by));
     }
 
     /**
@@ -193,7 +193,7 @@ public class DowntownGurl {
         if (description.isBlank() || from.isBlank() || to.isBlank()) {
             throw new DowntownGurlException(EMPTY_TASK_MESSAGE);
         }
-        return new Event(description, from, to);
+        return new Event(description, TaskDateTime.parse(from), TaskDateTime.parse(to));
     }
 
     /**
@@ -350,7 +350,7 @@ public class DowntownGurl {
             if (description.isBlank() || by.isBlank()) {
                 throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
             }
-            return new Deadline(description, by);
+            return new Deadline(description, TaskDateTime.parseFromStorage(by));
         }
         if (parts.length != 3 || parts[2].isBlank()) {
             throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
@@ -371,7 +371,8 @@ public class DowntownGurl {
                 || details.substring(separatorIndex + 2).isBlank()) {
             throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
         }
-        return new Deadline(details.substring(0, separatorIndex), details.substring(separatorIndex + 2));
+        return new Deadline(details.substring(0, separatorIndex),
+                TaskDateTime.parseFromStorage(details.substring(separatorIndex + 2)));
     }
 
     /**
@@ -389,7 +390,7 @@ public class DowntownGurl {
             if (description.isBlank() || from.isBlank() || to.isBlank()) {
                 throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
             }
-            return new Event(description, from, to);
+            return new Event(description, TaskDateTime.parseFromStorage(from), TaskDateTime.parseFromStorage(to));
         }
         if (parts.length != 3 || parts[2].isBlank()) {
             throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
@@ -416,7 +417,7 @@ public class DowntownGurl {
         if (description.isBlank() || from.isBlank() || to.isBlank()) {
             throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
         }
-        return new Event(description, from, to);
+        return new Event(description, TaskDateTime.parseFromStorage(from), TaskDateTime.parseFromStorage(to));
     }
 
     /**
