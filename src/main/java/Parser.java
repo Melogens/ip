@@ -22,35 +22,35 @@ public class Parser {
      */
     public Command parse(String command, TaskList tasks) throws DowntownGurlException {
         if (command.equals("bye")) {
-            return Command.of(CommandType.BYE);
+            return new ByeCommand();
         }
 
         if (command.equals("list")) {
-            return Command.of(CommandType.LIST);
+            return new ListCommand();
         }
 
         if (command.startsWith("mark ")) {
-            return Command.forTaskIndex(CommandType.MARK, getTaskIndexFromCommand(tasks, command, 5));
+            return new MarkCommand(getTaskIndexFromCommand(tasks, command, 5));
         }
 
         if (command.startsWith("unmark ")) {
-            return Command.forTaskIndex(CommandType.UNMARK, getTaskIndexFromCommand(tasks, command, 7));
+            return new UnmarkCommand(getTaskIndexFromCommand(tasks, command, 7));
         }
 
         if (command.startsWith("delete ")) {
-            return Command.forTaskIndex(CommandType.DELETE, getTaskIndexFromCommand(tasks, command, 7));
+            return new DeleteCommand(getTaskIndexFromCommand(tasks, command, 7));
         }
 
         if (command.equals("todo") || command.startsWith("todo ")) {
-            return Command.addTask(createTodo(command));
+            return new AddCommand(createTodo(command));
         }
 
         if (command.equals("deadline") || command.startsWith("deadline ")) {
-            return Command.addTask(createDeadline(command));
+            return new AddCommand(createDeadline(command));
         }
 
         if (command.equals("event") || command.startsWith("event ")) {
-            return Command.addTask(createEvent(command));
+            return new AddCommand(createEvent(command));
         }
 
         throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);

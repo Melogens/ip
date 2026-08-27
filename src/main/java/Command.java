@@ -1,72 +1,171 @@
 /**
  * Represents a user command after it has been parsed.
  */
-public class Command {
-    private final CommandType type;
-    private final Task task;
+public abstract class Command {
+    /**
+     * Executes this command.
+     *
+     * @param tasks Current task list.
+     * @param storage Storage helper used to save task changes.
+     * @param ui UI helper used to show command results.
+     * @return true if the application should exit, false otherwise.
+     * @throws DowntownGurlException If the command cannot be completed.
+     */
+    public abstract boolean execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException;
+
+    /**
+     * Restores a task's done status after a failed save.
+     *
+     * @param task Task to restore.
+     * @param wasDone Previous done status.
+     */
+    protected void restoreTaskStatus(Task task, boolean wasDone) {
+        if (wasDone) {
+            task.markAsDone();
+        } else {
+            task.markAsNotDone();
+        }
+    }
+}
+
+/**
+ * Represents the command that exits the chatbot.
+ */
+class ByeCommand extends Command {
+    @Override
+    public boolean execute(TaskList tasks, Storage storage, Ui ui) {
+        ui.showGoodbye();
+        return true;
+    }
+}
+
+/**
+ * Represents the command that shows all tasks.
+ */
+class ListCommand extends Command {
+    @Override
+    public boolean execute(TaskList tasks, Storage storage, Ui ui) {
+        ui.showTaskList(tasks);
+        return false;
+    }
+}
+
+/**
+ * Represents the command that marks a task as done.
+ */
+class MarkCommand extends Command {
     private final int taskIndex;
 
-    private Command(CommandType type, Task task, int taskIndex) {
-        this.type = type;
-        this.task = task;
+    /**
+     * Creates a command for marking the selected task.
+     *
+     * @param taskIndex Zero-based index of the task to mark.
+     */
+    MarkCommand(int taskIndex) {
         this.taskIndex = taskIndex;
     }
 
-    /**
-     * Creates a command that does not need extra data.
-     *
-     * @param type Kind of command.
-     * @return Parsed command.
-     */
-    public static Command of(CommandType type) {
-        return new Command(type, null, -1);
+    @Override
+    public boolean execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException {
+        Task task = tasks.get(this.taskIndex);
+        boolean wasDone = task.isDone();
+        tasks.markAsDone(this.taskIndex);
+        try {
+            storage.saveTasks(tasks);
+        } catch (DowntownGurlException e) {
+            restoreTaskStatus(task, wasDone);
+            throw e;
+        }
+        ui.showUpdatedTask("Kays, I've marked this task as done!", task);
+        return false;
     }
+}
+
+/**
+ * Represents the command that marks a task as not done.
+ */
+class UnmarkCommand extends Command {
+    private final int taskIndex;
 
     /**
-     * Creates a command that refers to an existing task.
+     * Creates a command for unmarking the selected task.
      *
-     * @param type Kind of command.
-     * @param taskIndex Zero-based index of the selected task.
-     * @return Parsed command.
+     * @param taskIndex Zero-based index of the task to unmark.
      */
-    public static Command forTaskIndex(CommandType type, int taskIndex) {
-        return new Command(type, null, taskIndex);
+    UnmarkCommand(int taskIndex) {
+        this.taskIndex = taskIndex;
     }
 
-    /**
-     * Creates a command that adds a new task.
-     *
-     * @param task New task to add.
-     * @return Parsed add command.
-     */
-    public static Command addTask(Task task) {
-        return new Command(CommandType.ADD, task, -1);
+    @Override
+    public boolean execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException {
+        Task task = tasks.get(this.taskIndex);
+        boolean wasDone = task.isDone();
+        tasks.markAsNotDone(this.taskIndex);
+        try {
+            storage.saveTasks(tasks);
+        } catch (DowntownGurlException e) {
+            restoreTaskStatus(task, wasDone);
+            throw e;
+        }
+        ui.showUpdatedTask("Sure, I unmarked it!", task);
+        return false;
     }
+}
+
+/**
+ * Represents the command that deletes a task.
+ */
+class DeleteCommand extends Command {
+    private final int taskIndex;
 
     /**
-     * Returns the command type.
+     * Creates a command for deleting the selected task.
      *
-     * @return Kind of command.
+     * @param taskIndex Zero-based index of the task to delete.
      */
-    public CommandType getType() {
-        return this.type;
+    DeleteCommand(int taskIndex) {
+        this.taskIndex = taskIndex;
     }
 
-    /**
-     * Returns the task attached to an add command.
-     *
-     * @return Task to add.
-     */
-    public Task getTask() {
-        return this.task;
+    @Override
+    public boolean execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException {
+        Task removedTask = tasks.remove(this.taskIndex);
+        try {
+            storage.saveTasks(tasks);
+        } catch (DowntownGurlException e) {
+            tasks.add(this.taskIndex, removedTask);
+            throw e;
+        }
+        ui.showDeletedTask(removedTask, tasks.size());
+        return false;
     }
+}
+
+/**
+ * Represents the command that adds a new task.
+ */
+class AddCommand extends Command {
+    private final Task task;
 
     /**
-     * Returns the zero-based task index attached to a task-selection command.
+     * Creates a command for adding the given task.
      *
-     * @return Selected task index.
+     * @param task Task to add.
      */
-    public int getTaskIndex() {
-        return this.taskIndex;
+    AddCommand(Task task) {
+        this.task = task;
+    }
+
+    @Override
+    public boolean execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException {
+        tasks.add(this.task);
+        try {
+            storage.saveTasks(tasks);
+        } catch (DowntownGurlException e) {
+            tasks.removeLast();
+            throw e;
+        }
+        ui.showAddedTask(this.task, tasks.size());
+        return false;
     }
 }
