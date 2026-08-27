@@ -1,4 +1,9 @@
+package downtowngurl.ui;
+
 import java.util.Scanner;
+
+import downtowngurl.task.Task;
+import downtowngurl.task.TaskList;
 
 /**
  * Handles text interactions with the user.

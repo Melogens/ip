@@ -1,3 +1,5 @@
+package downtowngurl.task;
+
 /**
  * Represents the fixed categories of tasks supported by the chatbot.
  */

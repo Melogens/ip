@@ -1,4 +1,13 @@
+package downtowngurl;
+
 import java.nio.file.Path;
+
+import downtowngurl.command.Command;
+import downtowngurl.exception.DowntownGurlException;
+import downtowngurl.parser.Parser;
+import downtowngurl.storage.Storage;
+import downtowngurl.task.TaskList;
+import downtowngurl.ui.Ui;
 
 /**
  * Entry point for the Downtown Gurl chatbot application.

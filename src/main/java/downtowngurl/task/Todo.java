@@ -1,3 +1,5 @@
+package downtowngurl.task;
+
 /**
  * Represents a task without any attached date or time.
  */
