@@ -16,11 +16,10 @@ public class Parser {
      * Parses a full user command into a command object the application can execute.
      *
      * @param command Full user command.
-     * @param tasks Current task list, used to validate task numbers.
      * @return Parsed command.
      * @throws DowntownGurlException If the command is invalid.
      */
-    public Command parse(String command, TaskList tasks) throws DowntownGurlException {
+    public static Command parse(String command) throws DowntownGurlException {
         if (command.equals("bye")) {
             return new ByeCommand();
         }
@@ -30,15 +29,15 @@ public class Parser {
         }
 
         if (command.startsWith("mark ")) {
-            return new MarkCommand(getTaskIndexFromCommand(tasks, command, 5));
+            return new MarkCommand(getTaskIndexFromCommand(command, 5));
         }
 
         if (command.startsWith("unmark ")) {
-            return new UnmarkCommand(getTaskIndexFromCommand(tasks, command, 7));
+            return new UnmarkCommand(getTaskIndexFromCommand(command, 7));
         }
 
         if (command.startsWith("delete ")) {
-            return new DeleteCommand(getTaskIndexFromCommand(tasks, command, 7));
+            return new DeleteCommand(getTaskIndexFromCommand(command, 7));
         }
 
         if (command.equals("todo") || command.startsWith("todo ")) {
@@ -63,7 +62,7 @@ public class Parser {
      * @return New todo task.
      * @throws DowntownGurlException If the todo description is missing.
      */
-    private Todo createTodo(String command) throws DowntownGurlException {
+    private static Todo createTodo(String command) throws DowntownGurlException {
         if (command.length() <= 5 || command.substring(5).isBlank()) {
             throw new DowntownGurlException(EMPTY_TASK_MESSAGE);
         }
@@ -77,7 +76,7 @@ public class Parser {
      * @return New deadline task.
      * @throws DowntownGurlException If the description or deadline time is missing.
      */
-    private Deadline createDeadline(String command) throws DowntownGurlException {
+    private static Deadline createDeadline(String command) throws DowntownGurlException {
         int separatorIndex = command.indexOf(DEADLINE_SEPARATOR);
         if (separatorIndex == -1) {
             throw new DowntownGurlException(DEADLINE_FORMAT_HINT);
@@ -101,7 +100,7 @@ public class Parser {
      * @return New event task.
      * @throws DowntownGurlException If the description, start, or end is missing.
      */
-    private Event createEvent(String command) throws DowntownGurlException {
+    private static Event createEvent(String command) throws DowntownGurlException {
         int fromIndex = command.indexOf(EVENT_FROM_SEPARATOR);
         int toIndex = command.indexOf(EVENT_TO_SEPARATOR);
         if (fromIndex == -1 || toIndex == -1 || fromIndex >= toIndex) {
@@ -123,13 +122,12 @@ public class Parser {
     /**
      * Finds the zero-based task index in a command containing a one-based task number.
      *
-     * @param tasks Current task list.
      * @param command Full user command.
      * @param taskNumberStartIndex Index where the task number starts.
      * @return Zero-based index of the task selected by the user.
      * @throws DowntownGurlException If the task number is not valid.
      */
-    private int getTaskIndexFromCommand(TaskList tasks, String command, int taskNumberStartIndex)
+    private static int getTaskIndexFromCommand(String command, int taskNumberStartIndex)
             throws DowntownGurlException {
         int taskNumber;
         try {
@@ -137,7 +135,7 @@ public class Parser {
         } catch (NumberFormatException e) {
             throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
         }
-        if (taskNumber < 1 || taskNumber > tasks.size()) {
+        if (taskNumber < 1) {
             throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
         }
         return taskNumber - 1;

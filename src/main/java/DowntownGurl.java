@@ -10,7 +10,6 @@ public class DowntownGurl {
 
     private final Storage storage;
     private final Ui ui;
-    private final Parser parser;
     private TaskList tasks;
 
     /**
@@ -21,7 +20,6 @@ public class DowntownGurl {
     public DowntownGurl(Path taskFilePath) {
         this.ui = new Ui();
         this.storage = new Storage(taskFilePath);
-        this.parser = new Parser();
         this.tasks = new TaskList();
     }
 
@@ -31,14 +29,18 @@ public class DowntownGurl {
     public void run() {
         this.ui.showWelcome();
         this.tasks = loadTasks();
-        while (this.ui.hasNextCommand()) {
-            String command = this.ui.readCommand();
+        boolean isExit = false;
+        while (!isExit && this.ui.hasNextCommand()) {
             try {
-                if (this.parser.parse(command, this.tasks).execute(this.tasks, this.storage, this.ui)) {
-                    break;
-                }
+                String fullCommand = this.ui.readCommand();
+                this.ui.showLine();
+                Command command = Parser.parse(fullCommand);
+                command.execute(this.tasks, this.storage, this.ui);
+                isExit = command.isExit();
             } catch (DowntownGurlException e) {
                 this.ui.showError(e.getMessage());
+            } finally {
+                this.ui.showLine();
             }
         }
     }

@@ -59,7 +59,6 @@ public class Ui {
      */
     public void showGoodbye() {
         System.out.println("That's bombz. Byes!");
-        System.out.println(DIVIDER);
     }
 
     /**
@@ -73,7 +72,6 @@ public class Ui {
         for (int i = 0; i < tasks.size(); i++) {
             System.out.println(" " + (i + 1) + ". " + tasks.get(i));
         }
-        System.out.println(DIVIDER);
     }
 
     /**
@@ -85,7 +83,6 @@ public class Ui {
     public void showUpdatedTask(String message, Task task) {
         System.out.println(message);
         System.out.println("  " + task);
-        System.out.println(DIVIDER);
     }
 
     /**
@@ -98,7 +95,6 @@ public class Ui {
         System.out.println("Gotcha. Noted it downz:");
         System.out.println("  " + addedTask);
         System.out.println("Now you got " + taskCount + " tasks in the roster.");
-        System.out.println(DIVIDER);
     }
 
     /**
@@ -111,7 +107,6 @@ public class Ui {
         System.out.println("Sure~ I've removed this task:");
         System.out.println("  " + removedTask);
         System.out.println("Now you got " + taskCount + " tasks in the list.");
-        System.out.println(DIVIDER);
     }
 
     /**
@@ -121,6 +116,12 @@ public class Ui {
      */
     public void showError(String message) {
         System.out.println(message);
+    }
+
+    /**
+     * Prints a divider line between chatbot interactions.
+     */
+    public void showLine() {
         System.out.println(DIVIDER);
     }
 }

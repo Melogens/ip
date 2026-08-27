@@ -8,10 +8,18 @@ public abstract class Command {
      * @param tasks Current task list.
      * @param storage Storage helper used to save task changes.
      * @param ui UI helper used to show command results.
-     * @return true if the application should exit, false otherwise.
      * @throws DowntownGurlException If the command cannot be completed.
      */
-    public abstract boolean execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException;
+    public abstract void execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException;
+
+    /**
+     * Returns whether this command should exit the application after execution.
+     *
+     * @return true if the application should exit, false otherwise.
+     */
+    public boolean isExit() {
+        return false;
+    }
 
     /**
      * Restores a task's done status after a failed save.
@@ -26,6 +34,19 @@ public abstract class Command {
             task.markAsNotDone();
         }
     }
+
+    /**
+     * Checks that a parsed task index exists in the current task list.
+     *
+     * @param tasks Current task list.
+     * @param taskIndex Zero-based task index to check.
+     * @throws DowntownGurlException If the task index does not exist.
+     */
+    protected void requireValidTaskIndex(TaskList tasks, int taskIndex) throws DowntownGurlException {
+        if (taskIndex < 0 || taskIndex >= tasks.size()) {
+            throw new DowntownGurlException("U sleeping alright? Sounds like you ain't...");
+        }
+    }
 }
 
 /**
@@ -33,8 +54,12 @@ public abstract class Command {
  */
 class ByeCommand extends Command {
     @Override
-    public boolean execute(TaskList tasks, Storage storage, Ui ui) {
+    public void execute(TaskList tasks, Storage storage, Ui ui) {
         ui.showGoodbye();
+    }
+
+    @Override
+    public boolean isExit() {
         return true;
     }
 }
@@ -44,9 +69,8 @@ class ByeCommand extends Command {
  */
 class ListCommand extends Command {
     @Override
-    public boolean execute(TaskList tasks, Storage storage, Ui ui) {
+    public void execute(TaskList tasks, Storage storage, Ui ui) {
         ui.showTaskList(tasks);
-        return false;
     }
 }
 
@@ -66,7 +90,8 @@ class MarkCommand extends Command {
     }
 
     @Override
-    public boolean execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException {
+    public void execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException {
+        requireValidTaskIndex(tasks, this.taskIndex);
         Task task = tasks.get(this.taskIndex);
         boolean wasDone = task.isDone();
         tasks.markAsDone(this.taskIndex);
@@ -77,7 +102,6 @@ class MarkCommand extends Command {
             throw e;
         }
         ui.showUpdatedTask("Kays, I've marked this task as done!", task);
-        return false;
     }
 }
 
@@ -97,7 +121,8 @@ class UnmarkCommand extends Command {
     }
 
     @Override
-    public boolean execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException {
+    public void execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException {
+        requireValidTaskIndex(tasks, this.taskIndex);
         Task task = tasks.get(this.taskIndex);
         boolean wasDone = task.isDone();
         tasks.markAsNotDone(this.taskIndex);
@@ -108,7 +133,6 @@ class UnmarkCommand extends Command {
             throw e;
         }
         ui.showUpdatedTask("Sure, I unmarked it!", task);
-        return false;
     }
 }
 
@@ -128,7 +152,8 @@ class DeleteCommand extends Command {
     }
 
     @Override
-    public boolean execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException {
+    public void execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException {
+        requireValidTaskIndex(tasks, this.taskIndex);
         Task removedTask = tasks.remove(this.taskIndex);
         try {
             storage.saveTasks(tasks);
@@ -137,7 +162,6 @@ class DeleteCommand extends Command {
             throw e;
         }
         ui.showDeletedTask(removedTask, tasks.size());
-        return false;
     }
 }
 
@@ -157,7 +181,7 @@ class AddCommand extends Command {
     }
 
     @Override
-    public boolean execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException {
+    public void execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException {
         tasks.add(this.task);
         try {
             storage.saveTasks(tasks);
@@ -166,6 +190,5 @@ class AddCommand extends Command {
             throw e;
         }
         ui.showAddedTask(this.task, tasks.size());
-        return false;
     }
 }
