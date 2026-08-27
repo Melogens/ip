@@ -1,3 +1,5 @@
+package downtowngurl.exception;
+
 /**
  * Represents errors caused by invalid user input in the Downtown Gurl chatbot.
  */
