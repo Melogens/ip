@@ -1,14 +1,10 @@
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Scanner;
 
 /**
  * Entry point for the Downtown Gurl chatbot application.
  */
 public class DowntownGurl {
-    private static final String CHATBOT_NAME = "Downtown Gurl";
-    private static final String DIVIDER = "<*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*>";
     private static final String DEADLINE_SEPARATOR = " /by ";
     private static final String EVENT_FROM_SEPARATOR = " /from ";
     private static final String EVENT_TO_SEPARATOR = " /to ";
@@ -23,33 +19,19 @@ public class DowntownGurl {
     private static final String CORRUPTED_LINE_MESSAGE = "I skipped a corrupted saved task on line ";
 
     public static void main(String[] args) {
-        String banner = """
-                 ____                      _                       ____           __\s
-                |  _ \\  _____      ___ __ | |_ _____      ___ __  / ___|_   _ _ __| |
-                | | | |/ _ \\ \\ /\\ / / '_ \\| __/ _ \\ \\ /\\ / / '_ \\| |___| | | ' __|| |
-                | |_| | (_) \\ V  V /| | | | || (_) \\ V  V /| | | | |_| | |_| | |  | |
-                |____/ \\___/ \\_/\\_/ |_| |_|\\__\\___/ \\_/\\_/ |_| |_|\\____|\\__,_|_|  |_|""";
-        System.out.println(DIVIDER);
-        System.out.println(banner);
-        System.out.println(DIVIDER);
-        System.out.println("Hey I'm " + CHATBOT_NAME + ".");
-        System.out.println("I'm here to give you a reality check " +
-                "and help you manifest that life you've been dreaming.");
-        System.out.println(DIVIDER);
-        System.out.println("Darling what's up?");
-
+        Ui ui = new Ui();
+        ui.showWelcome();
         Storage storage = new Storage(TASK_FILE_PATH);
-        ArrayList<Task> tasks = loadTasks(storage);
+        ArrayList<Task> tasks = loadTasks(storage, ui);
 
-        Scanner scanner = new Scanner(System.in);
-        while (scanner.hasNextLine()) {
-            String command = scanner.nextLine();
+        while (ui.hasNextCommand()) {
+            String command = ui.readCommand();
             try {
-                if (handleCommand(command, tasks, storage)) {
+                if (handleCommand(command, tasks, storage, ui)) {
                     break;
                 }
             } catch (DowntownGurlException e) {
-                printErrorMessage(e.getMessage());
+                ui.showError(e.getMessage());
             }
         }
     }
@@ -60,19 +42,19 @@ public class DowntownGurl {
      * @param command Full user command.
      * @param tasks Current task list.
      * @param storage Storage helper used to save task changes.
+     * @param ui UI helper used to show command results.
      * @return true if the user wants to exit, false otherwise.
      * @throws DowntownGurlException If the command cannot be handled.
      */
-    private static boolean handleCommand(String command, ArrayList<Task> tasks, Storage storage)
+    private static boolean handleCommand(String command, ArrayList<Task> tasks, Storage storage, Ui ui)
             throws DowntownGurlException {
         if (command.equals("bye")) {
-            System.out.println("That's bombz. Byes!");
-            System.out.println(DIVIDER);
+            ui.showGoodbye();
             return true;
         }
 
         if (command.equals("list")) {
-            printTaskList(tasks);
+            ui.showTaskList(tasks);
             return false;
         }
 
@@ -86,7 +68,7 @@ public class DowntownGurl {
                 restoreTaskStatus(task, wasDone);
                 throw e;
             }
-            printUpdatedTaskMessage("Kays, I've marked this task as done!", task);
+            ui.showUpdatedTask("Kays, I've marked this task as done!", task);
             return false;
         }
 
@@ -100,7 +82,7 @@ public class DowntownGurl {
                 restoreTaskStatus(task, wasDone);
                 throw e;
             }
-            printUpdatedTaskMessage("Sure, I unmarked it!", task);
+            ui.showUpdatedTask("Sure, I unmarked it!", task);
             return false;
         }
 
@@ -113,28 +95,28 @@ public class DowntownGurl {
                 tasks.add(taskIndex, removedTask);
                 throw e;
             }
-            printDeletedTaskMessage(removedTask, tasks.size());
+            ui.showDeletedTask(removedTask, tasks.size());
             return false;
         }
 
         if (command.equals("todo") || command.startsWith("todo ")) {
             Task addedTask = createTodo(command);
             addTask(tasks, addedTask, storage);
-            printAddedTaskMessage(addedTask, tasks.size());
+            ui.showAddedTask(addedTask, tasks.size());
             return false;
         }
 
         if (command.equals("deadline") || command.startsWith("deadline ")) {
             Task addedTask = createDeadline(command);
             addTask(tasks, addedTask, storage);
-            printAddedTaskMessage(addedTask, tasks.size());
+            ui.showAddedTask(addedTask, tasks.size());
             return false;
         }
 
         if (command.equals("event") || command.startsWith("event ")) {
             Task addedTask = createEvent(command);
             addTask(tasks, addedTask, storage);
-            printAddedTaskMessage(addedTask, tasks.size());
+            ui.showAddedTask(addedTask, tasks.size());
             return false;
         }
 
@@ -278,80 +260,19 @@ public class DowntownGurl {
      * Loads tasks from the data file if it already exists.
      *
      * @param storage Storage helper used to load saved tasks.
+     * @param ui UI helper used to show load warnings.
      * @return Task list from the data file, or an empty list if the file does not exist.
      */
-    private static ArrayList<Task> loadTasks(Storage storage) {
+    private static ArrayList<Task> loadTasks(Storage storage, Ui ui) {
         try {
             ArrayList<Task> tasks = storage.loadTasks();
             for (int lineNumber : storage.getCorruptedLineNumbers()) {
-                printErrorMessage(CORRUPTED_LINE_MESSAGE + lineNumber + ".");
+                ui.showError(CORRUPTED_LINE_MESSAGE + lineNumber + ".");
             }
             return tasks;
         } catch (DowntownGurlException e) {
-            printErrorMessage(LOAD_ERROR_MESSAGE);
+            ui.showError(LOAD_ERROR_MESSAGE);
             return new ArrayList<>();
         }
-    }
-
-    /**
-     * Prints all tasks currently in the list.
-     *
-     * @param tasks Current task list.
-     */
-    private static void printTaskList(ArrayList<Task> tasks) {
-        tasks.sort(Comparator.comparing(Task::getSortDateTime, Comparator.nullsLast(Comparator.naturalOrder())));
-        System.out.println("Here's your tasks:");
-        for (int i = 0; i < tasks.size(); i++) {
-            System.out.println(" " + (i + 1) + ". " + tasks.get(i));
-        }
-        System.out.println(DIVIDER);
-    }
-
-    /**
-     * Prints the result of marking or unmarking a task.
-     *
-     * @param message Confirmation message.
-     * @param task Updated task.
-     */
-    private static void printUpdatedTaskMessage(String message, Task task) {
-        System.out.println(message);
-        System.out.println("  " + task);
-        System.out.println(DIVIDER);
-    }
-
-    /**
-     * Prints a confirmation for the newly added task.
-     *
-     * @param addedTask Task that was added.
-     * @param taskCount Number of tasks after adding the task.
-     */
-    private static void printAddedTaskMessage(Task addedTask, int taskCount) {
-        System.out.println("Gotcha. Noted it downz:");
-        System.out.println("  " + addedTask);
-        System.out.println("Now you got " + taskCount + " tasks in the roster.");
-        System.out.println(DIVIDER);
-    }
-
-    /**
-     * Prints a confirmation for the deleted task.
-     *
-     * @param removedTask Task that was removed.
-     * @param taskCount Number of tasks after removing the task.
-     */
-    private static void printDeletedTaskMessage(Task removedTask, int taskCount) {
-        System.out.println("Sure~ I've removed this task:");
-        System.out.println("  " + removedTask);
-        System.out.println("Now you got " + taskCount + " tasks in the list.");
-        System.out.println(DIVIDER);
-    }
-
-    /**
-     * Prints an error message using the same divider style as normal chatbot replies.
-     *
-     * @param message Error message to show.
-     */
-    private static void printErrorMessage(String message) {
-        System.out.println(message);
-        System.out.println(DIVIDER);
     }
 }
