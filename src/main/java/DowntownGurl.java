@@ -8,90 +8,106 @@ public class DowntownGurl {
     private static final String LOAD_ERROR_MESSAGE = "Oops, I couldn't load your tasks from disk.";
     private static final String CORRUPTED_LINE_MESSAGE = "I skipped a corrupted saved task on line ";
 
-    public static void main(String[] args) {
-        Ui ui = new Ui();
-        ui.showWelcome();
-        Storage storage = new Storage(TASK_FILE_PATH);
-        TaskList tasks = loadTasks(storage, ui);
-        Parser parser = new Parser();
+    private final Storage storage;
+    private final Ui ui;
+    private final Parser parser;
+    private TaskList tasks;
 
-        while (ui.hasNextCommand()) {
-            String command = ui.readCommand();
+    /**
+     * Creates the chatbot application using the given file for saved tasks.
+     *
+     * @param taskFilePath Path to the file used to persist tasks.
+     */
+    public DowntownGurl(Path taskFilePath) {
+        this.ui = new Ui();
+        this.storage = new Storage(taskFilePath);
+        this.parser = new Parser();
+        this.tasks = new TaskList();
+    }
+
+    /**
+     * Starts reading and handling user commands.
+     */
+    public void run() {
+        this.ui.showWelcome();
+        this.tasks = loadTasks();
+        while (this.ui.hasNextCommand()) {
+            String command = this.ui.readCommand();
             try {
-                if (handleCommand(parser.parse(command, tasks), tasks, storage, ui)) {
+                if (handleCommand(this.parser.parse(command, this.tasks))) {
                     break;
                 }
             } catch (DowntownGurlException e) {
-                ui.showError(e.getMessage());
+                this.ui.showError(e.getMessage());
             }
         }
+    }
+
+    public static void main(String[] args) {
+        new DowntownGurl(TASK_FILE_PATH).run();
     }
 
     /**
      * Handles one user command.
      *
      * @param command Parsed command to execute.
-     * @param tasks Current task list.
-     * @param storage Storage helper used to save task changes.
-     * @param ui UI helper used to show command results.
      * @return true if the user wants to exit, false otherwise.
      * @throws DowntownGurlException If the command cannot be handled.
      */
-    private static boolean handleCommand(Command command, TaskList tasks, Storage storage, Ui ui)
-            throws DowntownGurlException {
+    private boolean handleCommand(Command command) throws DowntownGurlException {
         switch (command.getType()) {
         case BYE:
-            ui.showGoodbye();
+            this.ui.showGoodbye();
             return true;
 
         case LIST:
-            ui.showTaskList(tasks);
+            this.ui.showTaskList(this.tasks);
             return false;
 
         case MARK:
             int taskIndex = command.getTaskIndex();
-            Task task = tasks.get(taskIndex);
+            Task task = this.tasks.get(taskIndex);
             boolean wasDone = task.isDone();
-            tasks.markAsDone(taskIndex);
+            this.tasks.markAsDone(taskIndex);
             try {
-                storage.saveTasks(tasks);
+                this.storage.saveTasks(this.tasks);
             } catch (DowntownGurlException e) {
                 restoreTaskStatus(task, wasDone);
                 throw e;
             }
-            ui.showUpdatedTask("Kays, I've marked this task as done!", task);
+            this.ui.showUpdatedTask("Kays, I've marked this task as done!", task);
             return false;
 
         case UNMARK:
             int unmarkedTaskIndex = command.getTaskIndex();
-            Task unmarkedTask = tasks.get(unmarkedTaskIndex);
+            Task unmarkedTask = this.tasks.get(unmarkedTaskIndex);
             boolean wasTaskDone = unmarkedTask.isDone();
-            tasks.markAsNotDone(unmarkedTaskIndex);
+            this.tasks.markAsNotDone(unmarkedTaskIndex);
             try {
-                storage.saveTasks(tasks);
+                this.storage.saveTasks(this.tasks);
             } catch (DowntownGurlException e) {
                 restoreTaskStatus(unmarkedTask, wasTaskDone);
                 throw e;
             }
-            ui.showUpdatedTask("Sure, I unmarked it!", unmarkedTask);
+            this.ui.showUpdatedTask("Sure, I unmarked it!", unmarkedTask);
             return false;
 
         case DELETE:
             int removedTaskIndex = command.getTaskIndex();
-            Task removedTask = tasks.remove(removedTaskIndex);
+            Task removedTask = this.tasks.remove(removedTaskIndex);
             try {
-                storage.saveTasks(tasks);
+                this.storage.saveTasks(this.tasks);
             } catch (DowntownGurlException e) {
-                tasks.add(removedTaskIndex, removedTask);
+                this.tasks.add(removedTaskIndex, removedTask);
                 throw e;
             }
-            ui.showDeletedTask(removedTask, tasks.size());
+            this.ui.showDeletedTask(removedTask, this.tasks.size());
             return false;
 
         case ADD:
             Task addedTask = command.getTask();
-            addTask(tasks, addedTask, storage);
-            ui.showAddedTask(addedTask, tasks.size());
+            addTask(addedTask);
+            this.ui.showAddedTask(addedTask, this.tasks.size());
             return false;
         }
         throw new AssertionError("Unknown command type: " + command.getType());
@@ -100,17 +116,15 @@ public class DowntownGurl {
     /**
      * Adds a task only if the updated list can be saved.
      *
-     * @param tasks Current task list.
      * @param addedTask Task to add.
-     * @param storage Storage helper used to save the updated task list.
      * @throws DowntownGurlException If the updated task list cannot be saved.
      */
-    private static void addTask(TaskList tasks, Task addedTask, Storage storage) throws DowntownGurlException {
-        tasks.add(addedTask);
+    private void addTask(Task addedTask) throws DowntownGurlException {
+        this.tasks.add(addedTask);
         try {
-            storage.saveTasks(tasks);
+            this.storage.saveTasks(this.tasks);
         } catch (DowntownGurlException e) {
-            tasks.removeLast();
+            this.tasks.removeLast();
             throw e;
         }
     }
@@ -132,19 +146,17 @@ public class DowntownGurl {
     /**
      * Loads tasks from the data file if it already exists.
      *
-     * @param storage Storage helper used to load saved tasks.
-     * @param ui UI helper used to show load warnings.
      * @return Task list from the data file, or an empty list if the file does not exist.
      */
-    private static TaskList loadTasks(Storage storage, Ui ui) {
+    private TaskList loadTasks() {
         try {
-            TaskList tasks = new TaskList(storage.loadTasks());
-            for (int lineNumber : storage.getCorruptedLineNumbers()) {
-                ui.showError(CORRUPTED_LINE_MESSAGE + lineNumber + ".");
+            TaskList loadedTasks = new TaskList(this.storage.loadTasks());
+            for (int lineNumber : this.storage.getCorruptedLineNumbers()) {
+                this.ui.showError(CORRUPTED_LINE_MESSAGE + lineNumber + ".");
             }
-            return tasks;
+            return loadedTasks;
         } catch (DowntownGurlException e) {
-            ui.showError(LOAD_ERROR_MESSAGE);
+            this.ui.showError(LOAD_ERROR_MESSAGE);
             return new TaskList();
         }
     }
