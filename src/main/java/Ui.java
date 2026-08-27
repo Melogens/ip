@@ -1,5 +1,3 @@
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Scanner;
 
 /**
@@ -69,8 +67,8 @@ public class Ui {
      *
      * @param tasks Current task list.
      */
-    public void showTaskList(ArrayList<Task> tasks) {
-        tasks.sort(Comparator.comparing(Task::getSortDateTime, Comparator.nullsLast(Comparator.naturalOrder())));
+    public void showTaskList(TaskList tasks) {
+        tasks.sortByDate();
         System.out.println("Here's your tasks:");
         for (int i = 0; i < tasks.size(); i++) {
             System.out.println(" " + (i + 1) + ". " + tasks.get(i));

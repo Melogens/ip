@@ -1,5 +1,4 @@
 import java.nio.file.Path;
-import java.util.ArrayList;
 
 /**
  * Entry point for the Downtown Gurl chatbot application.
@@ -22,7 +21,7 @@ public class DowntownGurl {
         Ui ui = new Ui();
         ui.showWelcome();
         Storage storage = new Storage(TASK_FILE_PATH);
-        ArrayList<Task> tasks = loadTasks(storage, ui);
+        TaskList tasks = loadTasks(storage, ui);
 
         while (ui.hasNextCommand()) {
             String command = ui.readCommand();
@@ -46,7 +45,7 @@ public class DowntownGurl {
      * @return true if the user wants to exit, false otherwise.
      * @throws DowntownGurlException If the command cannot be handled.
      */
-    private static boolean handleCommand(String command, ArrayList<Task> tasks, Storage storage, Ui ui)
+    private static boolean handleCommand(String command, TaskList tasks, Storage storage, Ui ui)
             throws DowntownGurlException {
         if (command.equals("bye")) {
             ui.showGoodbye();
@@ -59,9 +58,10 @@ public class DowntownGurl {
         }
 
         if (command.startsWith("mark ")) {
-            Task task = getTaskByNumberFromCommand(tasks, command, 5);
+            int taskIndex = getTaskIndexFromCommand(tasks, command, 5);
+            Task task = tasks.get(taskIndex);
             boolean wasDone = task.isDone();
-            task.markAsDone();
+            tasks.markAsDone(taskIndex);
             try {
                 storage.saveTasks(tasks);
             } catch (DowntownGurlException e) {
@@ -73,9 +73,10 @@ public class DowntownGurl {
         }
 
         if (command.startsWith("unmark ")) {
-            Task task = getTaskByNumberFromCommand(tasks, command, 7);
+            int taskIndex = getTaskIndexFromCommand(tasks, command, 7);
+            Task task = tasks.get(taskIndex);
             boolean wasDone = task.isDone();
-            task.markAsNotDone();
+            tasks.markAsNotDone(taskIndex);
             try {
                 storage.saveTasks(tasks);
             } catch (DowntownGurlException e) {
@@ -188,20 +189,6 @@ public class DowntownGurl {
     }
 
     /**
-     * Finds the task number in a command and returns the matching task.
-     *
-     * @param tasks Current task list.
-     * @param command Full user command.
-     * @param taskNumberStartIndex Index where the task number starts.
-     * @return Task selected by the user.
-     * @throws DowntownGurlException If the task number is not valid.
-     */
-    private static Task getTaskByNumberFromCommand(ArrayList<Task> tasks, String command, int taskNumberStartIndex)
-            throws DowntownGurlException {
-        return tasks.get(getTaskIndexFromCommand(tasks, command, taskNumberStartIndex));
-    }
-
-    /**
      * Finds the zero-based task index in a command containing a one-based task number.
      *
      * @param tasks Current task list.
@@ -210,7 +197,7 @@ public class DowntownGurl {
      * @return Zero-based index of the task selected by the user.
      * @throws DowntownGurlException If the task number is not valid.
      */
-    private static int getTaskIndexFromCommand(ArrayList<Task> tasks, String command, int taskNumberStartIndex)
+    private static int getTaskIndexFromCommand(TaskList tasks, String command, int taskNumberStartIndex)
             throws DowntownGurlException {
         int taskNumber;
         try {
@@ -232,12 +219,12 @@ public class DowntownGurl {
      * @param storage Storage helper used to save the updated task list.
      * @throws DowntownGurlException If the updated task list cannot be saved.
      */
-    private static void addTask(ArrayList<Task> tasks, Task addedTask, Storage storage) throws DowntownGurlException {
+    private static void addTask(TaskList tasks, Task addedTask, Storage storage) throws DowntownGurlException {
         tasks.add(addedTask);
         try {
             storage.saveTasks(tasks);
         } catch (DowntownGurlException e) {
-            tasks.remove(tasks.size() - 1);
+            tasks.removeLast();
             throw e;
         }
     }
@@ -263,16 +250,16 @@ public class DowntownGurl {
      * @param ui UI helper used to show load warnings.
      * @return Task list from the data file, or an empty list if the file does not exist.
      */
-    private static ArrayList<Task> loadTasks(Storage storage, Ui ui) {
+    private static TaskList loadTasks(Storage storage, Ui ui) {
         try {
-            ArrayList<Task> tasks = storage.loadTasks();
+            TaskList tasks = new TaskList(storage.loadTasks());
             for (int lineNumber : storage.getCorruptedLineNumbers()) {
                 ui.showError(CORRUPTED_LINE_MESSAGE + lineNumber + ".");
             }
             return tasks;
         } catch (DowntownGurlException e) {
             ui.showError(LOAD_ERROR_MESSAGE);
-            return new ArrayList<>();
+            return new TaskList();
         }
     }
 }

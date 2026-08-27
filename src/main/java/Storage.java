@@ -75,7 +75,7 @@ public class Storage {
      * @param tasks Current task list.
      * @throws DowntownGurlException If the data file cannot be written.
      */
-    public void saveTasks(ArrayList<Task> tasks) throws DowntownGurlException {
+    public void saveTasks(Iterable<Task> tasks) throws DowntownGurlException {
         ArrayList<String> taskLines = new ArrayList<>();
         for (Task task : tasks) {
             taskLines.add(task.toStorageString());
