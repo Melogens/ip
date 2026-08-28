@@ -21,6 +21,14 @@ public class UnmarkCommand extends Command {
         this.taskIndex = taskIndex;
     }
 
+    /**
+     * Marks the selected task as not done and saves the updated task list.
+     *
+     * @param tasks Current task list.
+     * @param storage Storage helper used to save task changes.
+     * @param ui UI helper used to show command results.
+     * @throws DowntownGurlException If the task index is invalid or the change cannot be saved.
+     */
     @Override
     public void execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException {
         requireValidTaskIndex(tasks, this.taskIndex);

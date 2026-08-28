@@ -21,6 +21,14 @@ public class AddCommand extends Command {
         this.task = task;
     }
 
+    /**
+     * Adds the task, persists the updated list, and reports the new task count.
+     *
+     * @param tasks Current task list.
+     * @param storage Storage helper used to save task changes.
+     * @param ui UI helper used to show command results.
+     * @throws DowntownGurlException If the updated task list cannot be saved.
+     */
     @Override
     public void execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException {
         tasks.add(this.task);

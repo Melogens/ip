@@ -59,7 +59,7 @@ public class TaskList implements Iterable<Task> {
      * Removes the last task in the list.
      */
     public void removeLast() {
-        this.tasks.remove(this.tasks.size() - 1);
+        this.tasks.removeLast();
     }
 
     /**
@@ -112,6 +112,11 @@ public class TaskList implements Iterable<Task> {
         this.tasks.sort(Comparator.comparing(Task::getSortDateTime, Comparator.nullsLast(Comparator.naturalOrder())));
     }
 
+    /**
+     * Returns an iterator over the tasks in their current list order.
+     *
+     * @return Iterator over the stored tasks.
+     */
     @Override
     public Iterator<Task> iterator() {
         return this.tasks.iterator();

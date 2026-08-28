@@ -19,16 +19,31 @@ public class Deadline extends Task {
         this.by = by;
     }
 
+    /**
+     * Returns a storage-safe line containing this deadline's description and due time.
+     *
+     * @return Data file representation of this deadline.
+     */
     @Override
     public String toStorageString() {
         return super.toStorageString() + " * " + escapeStorageField(TaskDateTime.formatForStorage(this.by));
     }
 
+    /**
+     * Returns the due time used for sorting deadlines by date.
+     *
+     * @return Due date and time.
+     */
     @Override
     public LocalDateTime getSortDateTime() {
         return this.by;
     }
 
+    /**
+     * Returns the user-facing text representation of this deadline.
+     *
+     * @return Task text with formatted due time.
+     */
     @Override
     public String toString() {
         return super.toString() + " (by: " + TaskDateTime.formatForDisplay(this.by) + ")";

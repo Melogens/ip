@@ -98,6 +98,11 @@ public class Task {
                 .replace("*", "\\*");
     }
 
+    /**
+     * Returns the user-facing text representation of this task.
+     *
+     * @return Task type, completion status, and description.
+     */
     @Override
     public String toString() {
         return "[" + getTypeIcon() + "][" + getStatusIcon() + "] " + this.description;

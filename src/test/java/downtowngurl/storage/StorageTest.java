@@ -27,6 +27,11 @@ public class StorageTest {
     @TempDir
     public Path tempDir;
 
+    /**
+     * Checks that loading from a missing task file returns an empty list.
+     *
+     * @throws DowntownGurlException If loading unexpectedly fails.
+     */
     @Test
     public void loadTasks_missingTaskFile_returnsEmptyList() throws DowntownGurlException {
         Storage storage = new Storage(this.tempDir.resolve("data").resolve("tasks.txt"));
@@ -37,6 +42,12 @@ public class StorageTest {
         assertTrue(storage.getCorruptedLineNumbers().isEmpty());
     }
 
+    /**
+     * Checks that valid modern storage lines are loaded into the expected task objects.
+     *
+     * @throws DowntownGurlException If loading unexpectedly fails.
+     * @throws IOException If the test file cannot be created.
+     */
     @Test
     public void loadTasks_validModernStorageLines_returnsExpectedTasks()
             throws DowntownGurlException, IOException {
@@ -56,6 +67,12 @@ public class StorageTest {
         assertTrue(storage.getCorruptedLineNumbers().isEmpty());
     }
 
+    /**
+     * Checks that escaped storage characters are restored when loading descriptions.
+     *
+     * @throws DowntownGurlException If loading unexpectedly fails.
+     * @throws IOException If the test file cannot be created.
+     */
     @Test
     public void loadTasks_escapedStorageField_returnsUnescapedDescription()
             throws DowntownGurlException, IOException {
@@ -65,9 +82,15 @@ public class StorageTest {
         ArrayList<Task> tasks = storage.loadTasks();
 
         assertEquals(1, tasks.size());
-        assertEquals("[T][ ] line one\nline two * urgent \\ done", tasks.get(0).toString());
+        assertEquals("[T][ ] line one\nline two * urgent \\ done", tasks.getFirst().toString());
     }
 
+    /**
+     * Checks that corrupted saved lines are skipped and reported by line number.
+     *
+     * @throws DowntownGurlException If loading unexpectedly fails.
+     * @throws IOException If the test file cannot be created.
+     */
     @Test
     public void loadTasks_corruptedLines_skipsInvalidLinesAndRecordsLineNumbers()
             throws DowntownGurlException, IOException {
@@ -87,6 +110,12 @@ public class StorageTest {
         assertEquals(List.of(2, 3), storage.getCorruptedLineNumbers());
     }
 
+    /**
+     * Checks that saving tasks writes the modern storage format.
+     *
+     * @throws DowntownGurlException If saving unexpectedly fails.
+     * @throws IOException If the saved file cannot be read.
+     */
     @Test
     public void saveTasks_taskList_writesModernStorageLines() throws DowntownGurlException, IOException {
         Path taskFilePath = this.tempDir.resolve("data").resolve("tasks.txt");
@@ -110,6 +139,13 @@ public class StorageTest {
                 Files.readAllLines(taskFilePath));
     }
 
+    /**
+     * Creates a temporary task file containing the given lines.
+     *
+     * @param lines Lines to write into the task file.
+     * @return Path to the created task file.
+     * @throws IOException If the test file cannot be written.
+     */
     private Path createTaskFile(String... lines) throws IOException {
         Path taskFilePath = this.tempDir.resolve("tasks.txt");
         Files.write(taskFilePath, List.of(lines));
