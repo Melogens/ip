@@ -59,7 +59,7 @@ public class TaskList implements Iterable<Task> {
      * Removes the last task in the list.
      */
     public void removeLast() {
-        this.tasks.remove(this.tasks.size() - 1);
+        this.tasks.removeLast();
     }
 
     /**

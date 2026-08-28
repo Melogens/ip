@@ -82,7 +82,7 @@ public class StorageTest {
         ArrayList<Task> tasks = storage.loadTasks();
 
         assertEquals(1, tasks.size());
-        assertEquals("[T][ ] line one\nline two * urgent \\ done", tasks.get(0).toString());
+        assertEquals("[T][ ] line one\nline two * urgent \\ done", tasks.getFirst().toString());
     }
 
     /**
