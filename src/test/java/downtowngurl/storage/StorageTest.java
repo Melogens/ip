@@ -25,7 +25,7 @@ import downtowngurl.task.Todo;
  */
 public class StorageTest {
     @TempDir
-    public Path tempDir;
+    private Path tempDir;
 
     /**
      * Checks that loading from a missing task file returns an empty list.
