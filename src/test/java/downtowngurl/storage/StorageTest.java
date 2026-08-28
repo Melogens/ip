@@ -25,7 +25,7 @@ import downtowngurl.task.Todo;
  */
 public class StorageTest {
     @TempDir
-    public Path tempDir;
+    private Path tempDir;
 
     @Test
     public void loadTasks_missingTaskFile_returnsEmptyList() throws DowntownGurlException {

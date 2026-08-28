@@ -28,6 +28,13 @@ Unless the user says otherwise, assume that you are assisting a student working 
 
 Ensure that Java 25 is used when running the application or build tasks. On macOS, use `sdk use java 25.0.3.fx-zulu` to switch to Java 25 if needed.
 
+## Java coding standard
+
+For all Java code in this project, follow the project-specific `seedu-java-coding-standard`
+skill in `skills/seedu-java-coding-standard`. This skill is based on the SE-EDU
+Java coding standard (basic + intermediate) and falls back to the Google Java
+Style Guide for topics not covered there.
+
 ## Testing
 
 Focus JUnit tests on the top ~50% highest-value methods, prioritizing complex, core, or critical business logic over trivial getters/setters or simple display-only methods.
@@ -37,4 +44,6 @@ After each code change, update or add JUnit tests as needed so the test suite co
 
 Use lightweight tags unless the user requests an annotated tag.
 When proposing or creating a commit message, include enough detail to explain the rationale for the change.
+For all future commits in this project, follow the project-specific `seedu-git-standard`
+skill in `skills/seedu-git-standard`.
 Do not commit or push unless explicitly asked.
