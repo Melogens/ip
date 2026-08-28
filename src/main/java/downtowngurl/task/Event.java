@@ -22,17 +22,32 @@ public class Event extends Task {
         this.to = to;
     }
 
+    /**
+     * Returns a storage-safe line containing this event's description and time range.
+     *
+     * @return Data file representation of this event.
+     */
     @Override
     public String toStorageString() {
         return super.toStorageString() + " * " + escapeStorageField(TaskDateTime.formatForStorage(this.from))
                 + " * " + escapeStorageField(TaskDateTime.formatForStorage(this.to));
     }
 
+    /**
+     * Returns the start time used for sorting events by date.
+     *
+     * @return Start date and time.
+     */
     @Override
     public LocalDateTime getSortDateTime() {
         return this.from;
     }
 
+    /**
+     * Returns the user-facing text representation of this event.
+     *
+     * @return Task text with formatted start and end times.
+     */
     @Override
     public String toString() {
         return super.toString() + " (from: " + TaskDateTime.formatForDisplay(this.from)

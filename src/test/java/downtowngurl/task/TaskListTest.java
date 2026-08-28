@@ -10,6 +10,9 @@ import org.junit.jupiter.api.Test;
  * Tests task list operations that contain ordering logic.
  */
 public class TaskListTest {
+    /**
+     * Checks that dated tasks are sorted by date before undated todo tasks.
+     */
     @Test
     public void sortByDate_mixedDatedAndUndatedTasks_ordersDatedTasksBeforeTodos() {
         TaskList tasks = new TaskList();

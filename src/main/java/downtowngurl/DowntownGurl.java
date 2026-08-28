@@ -54,10 +54,6 @@ public class DowntownGurl {
         }
     }
 
-    public static void main(String[] args) {
-        new DowntownGurl(TASK_FILE_PATH).run();
-    }
-
     /**
      * Loads tasks from the data file if it already exists.
      *
@@ -74,5 +70,14 @@ public class DowntownGurl {
             this.ui.showError(LOAD_ERROR_MESSAGE);
             return new TaskList();
         }
+    }
+
+    /**
+     * Runs the chatbot using the default task file path.
+     *
+     * @param args Command-line arguments, currently unused.
+     */
+    public static void main(String[] args) {
+        new DowntownGurl(TASK_FILE_PATH).run();
     }
 }
