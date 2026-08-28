@@ -57,6 +57,15 @@ public class Task {
     }
 
     /**
+     * Returns the description entered by the user.
+     *
+     * @return Task description.
+     */
+    public String getDescription() {
+        return this.description;
+    }
+
+    /**
      * Returns the symbol used to identify this task type.
      *
      * @return Task type symbol.

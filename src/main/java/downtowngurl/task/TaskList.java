@@ -3,6 +3,7 @@ package downtowngurl.task;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.Locale;
 
 /**
  * Contains the tasks tracked by the chatbot and common operations on that list.
@@ -103,6 +104,24 @@ public class TaskList implements Iterable<Task> {
      */
     public int size() {
         return this.tasks.size();
+    }
+
+    /**
+     * Finds tasks whose descriptions contain the keyword, ignoring letter case.
+     *
+     * @param keyword Keyword to search for.
+     * @return Task list containing matching tasks in their current order.
+     */
+    public TaskList findByKeyword(String keyword) {
+        TaskList matches = new TaskList();
+        String lowerCaseKeyword = keyword.toLowerCase(Locale.ROOT);
+        for (Task task : this.tasks) {
+            String lowerCaseDescription = task.getDescription().toLowerCase(Locale.ROOT);
+            if (lowerCaseDescription.contains(lowerCaseKeyword)) {
+                matches.add(task);
+            }
+        }
+        return matches;
     }
 
     /**

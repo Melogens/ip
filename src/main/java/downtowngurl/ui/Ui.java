@@ -80,6 +80,22 @@ public class Ui {
     }
 
     /**
+     * Prints the tasks that matched a find command.
+     *
+     * @param tasks Matching tasks.
+     */
+    public void showMatchingTasks(TaskList tasks) {
+        if (tasks.size() == 0) {
+            System.out.println("No matching tasks found, bestie.");
+            return;
+        }
+        System.out.println("Here are the matching tasks:");
+        for (int i = 0; i < tasks.size(); i++) {
+            System.out.println(" " + (i + 1) + ". " + tasks.get(i));
+        }
+    }
+
+    /**
      * Prints the result of marking or unmarking a task.
      *
      * @param message Confirmation message.
