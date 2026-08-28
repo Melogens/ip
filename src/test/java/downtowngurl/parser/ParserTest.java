@@ -2,6 +2,7 @@ package downtowngurl.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -10,6 +11,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
 import downtowngurl.command.Command;
+import downtowngurl.command.FindCommand;
 import downtowngurl.exception.DowntownGurlException;
 import downtowngurl.storage.Storage;
 import downtowngurl.task.TaskList;
@@ -97,6 +99,13 @@ public class ParserTest {
     }
 
     @Test
+    public void parse_findCommand_returnsFindCommand() throws DowntownGurlException {
+        Command command = Parser.parse("find book");
+
+        assertInstanceOf(FindCommand.class, command);
+    }
+
+    @Test
     public void parse_unknownCommand_throwsDowntownGurlException() {
         assertThrows(DowntownGurlException.class, () -> Parser.parse("dance"));
     }
@@ -104,6 +113,11 @@ public class ParserTest {
     @Test
     public void parse_emptyTodoDescription_throwsDowntownGurlException() {
         assertThrows(DowntownGurlException.class, () -> Parser.parse("todo   "));
+    }
+
+    @Test
+    public void parse_emptyFindKeyword_throwsDowntownGurlException() {
+        assertThrows(DowntownGurlException.class, () -> Parser.parse("find   "));
     }
 
     @Test

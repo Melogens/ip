@@ -27,4 +27,21 @@ public class TaskListTest {
         assertEquals(laterDeadline, tasks.get(1));
         assertEquals(todo, tasks.get(2));
     }
+
+    @Test
+    public void findByKeyword_matchingDescriptions_returnsCaseInsensitiveSubstringMatches() {
+        TaskList tasks = new TaskList();
+        Todo lowercaseMatch = new Todo("visit the bookstore");
+        Todo uppercaseMatch = new Todo("READ BOOK tonight");
+        Todo nonMatch = new Todo("write report");
+        tasks.add(lowercaseMatch);
+        tasks.add(uppercaseMatch);
+        tasks.add(nonMatch);
+
+        TaskList matches = tasks.findByKeyword("book");
+
+        assertEquals(2, matches.size());
+        assertEquals(lowercaseMatch, matches.get(0));
+        assertEquals(uppercaseMatch, matches.get(1));
+    }
 }

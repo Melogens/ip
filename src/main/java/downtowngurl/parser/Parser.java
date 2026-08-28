@@ -4,6 +4,7 @@ import downtowngurl.command.AddCommand;
 import downtowngurl.command.ByeCommand;
 import downtowngurl.command.Command;
 import downtowngurl.command.DeleteCommand;
+import downtowngurl.command.FindCommand;
 import downtowngurl.command.ListCommand;
 import downtowngurl.command.MarkCommand;
 import downtowngurl.command.UnmarkCommand;
@@ -25,6 +26,7 @@ public class Parser {
             + "\nMaybe you could try formatting it as: deadline <task name> /by dd/mm/yyyy time";
     private static final String EVENT_FORMAT_HINT = EMPTY_TASK_MESSAGE
             + "\nMaybe you could try formatting it as: event <event name> /from dd/mm/yyyy time /to dd/mm/yyyy time";
+    private static final String EMPTY_FIND_KEYWORD_MESSAGE = "Soz queen you gotta give me a keyword to find.";
     private static final String UNKNOWN_COMMAND_MESSAGE = "U sleeping alright? Sounds like you ain't...";
 
     /**
@@ -41,6 +43,10 @@ public class Parser {
 
         if (command.equals("list")) {
             return new ListCommand();
+        }
+
+        if (command.equals("find") || command.startsWith("find ")) {
+            return new FindCommand(getFindKeyword(command));
         }
 
         if (command.startsWith("mark ")) {
@@ -68,6 +74,20 @@ public class Parser {
         }
 
         throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
+    }
+
+    /**
+     * Extracts the keyword from a find command.
+     *
+     * @param command Full user command.
+     * @return Keyword to search for.
+     * @throws DowntownGurlException If the keyword is missing.
+     */
+    private static String getFindKeyword(String command) throws DowntownGurlException {
+        if (command.length() <= 5 || command.substring(5).isBlank()) {
+            throw new DowntownGurlException(EMPTY_FIND_KEYWORD_MESSAGE);
+        }
+        return command.substring(5).trim();
     }
 
     /**
