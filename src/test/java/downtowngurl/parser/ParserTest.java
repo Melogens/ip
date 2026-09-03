@@ -174,8 +174,7 @@ public class ParserTest {
      */
     @Test
     public void parse_missingEventEndDate_throwsDowntownGurlException() {
-        assertThrows(DowntownGurlException.class,
-                () -> Parser.parse("event project meeting /from 2/12/2019 1800"));
+        assertThrows(DowntownGurlException.class, () -> Parser.parse("event project meeting /from 2/12/2019 1800"));
     }
 
     /**
