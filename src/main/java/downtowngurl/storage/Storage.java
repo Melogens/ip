@@ -117,10 +117,10 @@ public class Storage {
         }
 
         Task task = switch (parts[0]) {
-        case "T" -> createTodoFromStorageParts(parts);
-        case "D" -> createDeadlineFromStorageParts(parts);
-        case "E" -> createEventFromStorageParts(parts);
-        default -> throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
+            case "T" -> createTodoFromStorageParts(parts);
+            case "D" -> createDeadlineFromStorageParts(parts);
+            case "E" -> createEventFromStorageParts(parts);
+            default -> throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
         };
 
         if (parts[1].equals(STORAGE_DONE_STATUS)) {
@@ -244,11 +244,11 @@ public class Storage {
             char character = field.charAt(i);
             if (isEscaping) {
                 switch (character) {
-                case '\\' -> unescapedField.append('\\');
-                case 'r' -> unescapedField.append('\r');
-                case 'n' -> unescapedField.append('\n');
-                case '*' -> unescapedField.append('*');
-                default -> throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
+                    case '\\' -> unescapedField.append('\\');
+                    case 'r' -> unescapedField.append('\r');
+                    case 'n' -> unescapedField.append('\n');
+                    case '*' -> unescapedField.append('*');
+                    default -> throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
                 }
                 isEscaping = false;
             } else if (character == '\\') {
