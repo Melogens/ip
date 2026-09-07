@@ -22,6 +22,13 @@ public class DowntownGurl {
     private TaskList tasks;
 
     /**
+     * Creates the chatbot application using the default file for saved tasks.
+     */
+    public DowntownGurl() {
+        this(TASK_FILE_PATH);
+    }
+
+    /**
      * Creates the chatbot application using the given file for saved tasks.
      *
      * @param taskFilePath Path to the file used to persist tasks.
@@ -52,6 +59,16 @@ public class DowntownGurl {
                 this.ui.showLine();
             }
         }
+    }
+
+    /**
+     * Generates a response for the user's chat message.
+     *
+     * @param input user message from the chat window.
+     * @return response to display in the chat window.
+     */
+    public String getResponse(String input) {
+        return "DowntownGurl heard: " + input;
     }
 
     /**
