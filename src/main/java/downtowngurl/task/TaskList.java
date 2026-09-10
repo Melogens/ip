@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 /**
  * Contains the tasks tracked by the chatbot and common operations on that list.
@@ -113,15 +114,11 @@ public class TaskList implements Iterable<Task> {
      * @return Task list containing matching tasks in their current order.
      */
     public TaskList findByKeyword(String keyword) {
-        TaskList matches = new TaskList();
         String lowerCaseKeyword = keyword.toLowerCase(Locale.ROOT);
-        for (Task task : this.tasks) {
-            String lowerCaseDescription = task.getDescription().toLowerCase(Locale.ROOT);
-            if (lowerCaseDescription.contains(lowerCaseKeyword)) {
-                matches.add(task);
-            }
-        }
-        return matches;
+        ArrayList<Task> matches = this.tasks.stream()
+                .filter(task -> task.getDescription().toLowerCase(Locale.ROOT).contains(lowerCaseKeyword))
+                .collect(Collectors.toCollection(ArrayList::new));
+        return new TaskList(matches);
     }
 
     /**
