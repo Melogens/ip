@@ -2,6 +2,7 @@ package downtowngurl.command;
 
 import downtowngurl.exception.DowntownGurlException;
 import downtowngurl.storage.Storage;
+import downtowngurl.task.RecurrenceFrequency;
 import downtowngurl.task.Task;
 import downtowngurl.task.TaskList;
 import downtowngurl.ui.Ui;
@@ -42,6 +43,22 @@ public abstract class Command {
             task.markAsNotDone();
         }
         assert task.isDone() == wasDone : "Task status should be restored after a failed save.";
+    }
+
+    /**
+     * Restores a task's recurrence after a failed save.
+     *
+     * @param task Task to restore.
+     * @param previousFrequency Previous recurrence frequency.
+     */
+    protected void restoreRecurrence(Task task, RecurrenceFrequency previousFrequency) {
+        if (previousFrequency == null) {
+            task.clearRecurrence();
+        } else {
+            task.setRecurrenceFrequency(previousFrequency);
+        }
+        assert task.getRecurrenceFrequency() == previousFrequency
+                : "Task recurrence should be restored after a failed save.";
     }
 
     /**
