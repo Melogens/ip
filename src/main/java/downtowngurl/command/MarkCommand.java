@@ -35,6 +35,7 @@ public class MarkCommand extends Command {
         Task task = tasks.get(this.taskIndex);
         boolean wasDone = task.isDone();
         tasks.markAsDone(this.taskIndex);
+        assert task.isDone() : "Marking a task should set its done status.";
         try {
             storage.saveTasks(tasks);
         } catch (DowntownGurlException e) {

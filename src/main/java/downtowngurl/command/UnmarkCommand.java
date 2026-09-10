@@ -35,6 +35,7 @@ public class UnmarkCommand extends Command {
         Task task = tasks.get(this.taskIndex);
         boolean wasDone = task.isDone();
         tasks.markAsNotDone(this.taskIndex);
+        assert !task.isDone() : "Unmarking a task should clear its done status.";
         try {
             storage.saveTasks(tasks);
         } catch (DowntownGurlException e) {

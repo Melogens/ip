@@ -31,11 +31,15 @@ public class AddCommand extends Command {
      */
     @Override
     public void execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException {
+        int originalSize = tasks.size();
         tasks.add(this.task);
+        assert tasks.size() == originalSize + 1 : "Adding a task should increase the task count by one.";
+        assert tasks.get(tasks.size() - 1) == this.task : "Added task should be appended to the end of the list.";
         try {
             storage.saveTasks(tasks);
         } catch (DowntownGurlException e) {
             tasks.removeLast();
+            assert tasks.size() == originalSize : "Failed add should roll back the task count.";
             throw e;
         }
         ui.showAddedTask(this.task, tasks.size());
