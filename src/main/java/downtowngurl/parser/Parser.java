@@ -129,6 +129,7 @@ public class Parser {
             throw new DowntownGurlException(DEADLINE_FORMAT_HINT);
         }
         String description = command.substring(getArgumentStartIndex(DEADLINE_COMMAND), separatorIndex);
+        assert separatorIndex >= 9 : "Deadline separator should appear after the command word.";
         String by = command.substring(separatorIndex + DEADLINE_SEPARATOR.length());
         if (description.isBlank() || by.isBlank()) {
             throw new DowntownGurlException(DEADLINE_FORMAT_HINT);
@@ -154,6 +155,8 @@ public class Parser {
             throw new DowntownGurlException(EVENT_FORMAT_HINT);
         }
         String description = command.substring(getArgumentStartIndex(EVENT_COMMAND), fromIndex);
+        assert fromIndex >= 6 : "Event start separator should appear after the command word.";
+        assert toIndex > fromIndex : "Event end separator should appear after the start separator.";
         String from = command.substring(fromIndex + EVENT_FROM_SEPARATOR.length(), toIndex);
         String to = command.substring(toIndex + EVENT_TO_SEPARATOR.length());
         if (description.isBlank() || from.isBlank() || to.isBlank()) {
