@@ -41,6 +41,7 @@ public abstract class Command {
         } else {
             task.markAsNotDone();
         }
+        assert task.isDone() == wasDone : "Task status should be restored after a failed save.";
     }
 
     /**
@@ -54,5 +55,6 @@ public abstract class Command {
         if (taskIndex < 0 || taskIndex >= tasks.size()) {
             throw new DowntownGurlException("U sleeping alright? Sounds like you ain't...");
         }
+        assert taskIndex >= 0 && taskIndex < tasks.size() : "Validated task index should be in range.";
     }
 }

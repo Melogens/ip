@@ -32,11 +32,15 @@ public class DeleteCommand extends Command {
     @Override
     public void execute(TaskList tasks, Storage storage, Ui ui) throws DowntownGurlException {
         requireValidTaskIndex(tasks, this.taskIndex);
+        int originalSize = tasks.size();
         Task removedTask = tasks.remove(this.taskIndex);
+        assert tasks.size() == originalSize - 1 : "Deleting a task should decrease the task count by one.";
         try {
             storage.saveTasks(tasks);
         } catch (DowntownGurlException e) {
             tasks.add(this.taskIndex, removedTask);
+            assert tasks.size() == originalSize : "Failed delete should restore the task count.";
+            assert tasks.get(this.taskIndex) == removedTask : "Failed delete should restore the removed task.";
             throw e;
         }
         ui.showDeletedTask(removedTask, tasks.size());
