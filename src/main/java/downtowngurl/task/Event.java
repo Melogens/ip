@@ -30,7 +30,7 @@ public class Event extends Task {
     @Override
     public String toStorageString() {
         return super.toStorageString() + " * " + escapeStorageField(TaskDateTime.formatForStorage(this.from))
-                + " * " + escapeStorageField(TaskDateTime.formatForStorage(this.to));
+                + " * " + escapeStorageField(TaskDateTime.formatForStorage(this.to)) + getRecurrenceStorageText();
     }
 
     /**
@@ -51,6 +51,6 @@ public class Event extends Task {
     @Override
     public String toString() {
         return super.toString() + " (from: " + TaskDateTime.formatForDisplay(this.from)
-                + " to: " + TaskDateTime.formatForDisplay(this.to) + ")";
+                + " to: " + TaskDateTime.formatForDisplay(this.to) + ")" + getRecurrenceDisplayText();
     }
 }

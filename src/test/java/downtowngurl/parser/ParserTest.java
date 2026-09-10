@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.Test;
 
@@ -14,6 +15,7 @@ import downtowngurl.command.Command;
 import downtowngurl.command.FindCommand;
 import downtowngurl.exception.DowntownGurlException;
 import downtowngurl.storage.Storage;
+import downtowngurl.task.Deadline;
 import downtowngurl.task.TaskList;
 import downtowngurl.task.Todo;
 import downtowngurl.ui.Ui;
@@ -68,6 +70,23 @@ public class ParserTest {
     }
 
     /**
+     * Checks that a deadline command can create a weekly recurring deadline task.
+     *
+     * @throws DowntownGurlException If parsing or command execution unexpectedly fails.
+     */
+    @Test
+    public void parse_recurringDeadlineCommand_addsRecurringDeadlineTask() throws DowntownGurlException {
+        TaskList tasks = new TaskList();
+
+        Parser.parse("deadline return book /by 2/12/2019 1800 /repeat weekly")
+                .execute(tasks, this.storage, this.ui);
+
+        assertEquals(1, tasks.size());
+        assertEquals("[D][ ] return book (by: 02 Dec 2019, Monday 18:00) (repeats weekly)",
+                tasks.get(0).toString());
+    }
+
+    /**
      * Checks that an event command creates and adds an event task.
      *
      * @throws DowntownGurlException If parsing or command execution unexpectedly fails.
@@ -82,6 +101,23 @@ public class ParserTest {
         assertEquals(1, tasks.size());
         assertEquals("[E][ ] project meeting (from: 02 Dec 2019, Monday 18:00 to: 02 Dec 2019, Monday 20:00)",
                 tasks.get(0).toString());
+    }
+
+    /**
+     * Checks that an event command can create a weekly recurring event task.
+     *
+     * @throws DowntownGurlException If parsing or command execution unexpectedly fails.
+     */
+    @Test
+    public void parse_recurringEventCommand_addsRecurringEventTask() throws DowntownGurlException {
+        TaskList tasks = new TaskList();
+
+        Parser.parse("event project meeting /from 2/12/2019 1800 /to 2/12/2019 2000 /repeat weekly")
+                .execute(tasks, this.storage, this.ui);
+
+        assertEquals(1, tasks.size());
+        assertEquals("[E][ ] project meeting (from: 02 Dec 2019, Monday 18:00 to: 02 Dec 2019, Monday 20:00)"
+                + " (repeats weekly)", tasks.get(0).toString());
     }
 
     /**
@@ -134,6 +170,40 @@ public class ParserTest {
     }
 
     /**
+     * Checks that a repeat command makes the selected dated task recur weekly.
+     *
+     * @throws DowntownGurlException If parsing or command execution unexpectedly fails.
+     */
+    @Test
+    public void parse_repeatCommand_makesSelectedDatedTaskRecurring() throws DowntownGurlException {
+        TaskList tasks = new TaskList();
+        tasks.add(new Deadline("submit report", LocalDateTime.of(2019, 12, 2, 18, 0)));
+
+        Parser.parse("repeat 1 /weekly").execute(tasks, this.storage, this.ui);
+
+        assertTrue(tasks.get(0).isRecurring());
+        assertEquals("[D][ ] submit report (by: 02 Dec 2019, Monday 18:00) (repeats weekly)",
+                tasks.get(0).toString());
+    }
+
+    /**
+     * Checks that an unrepeat command removes recurrence from the selected task.
+     *
+     * @throws DowntownGurlException If parsing or command execution unexpectedly fails.
+     */
+    @Test
+    public void parse_unrepeatCommand_removesRecurrenceFromSelectedTask() throws DowntownGurlException {
+        TaskList tasks = new TaskList();
+        Parser.parse("deadline submit report /by 2/12/2019 1800 /repeat weekly")
+                .execute(tasks, this.storage, this.ui);
+
+        Parser.parse("unrepeat 1").execute(tasks, this.storage, this.ui);
+
+        assertFalse(tasks.get(0).isRecurring());
+        assertEquals("[D][ ] submit report (by: 02 Dec 2019, Monday 18:00)", tasks.get(0).toString());
+    }
+
+    /**
      * Checks that an unknown command is rejected.
      */
     @Test
@@ -175,6 +245,24 @@ public class ParserTest {
     @Test
     public void parse_missingEventEndDate_throwsDowntownGurlException() {
         assertThrows(DowntownGurlException.class, () -> Parser.parse("event project meeting /from 2/12/2019 1800"));
+    }
+
+    /**
+     * Checks that unsupported recurrence frequencies are rejected.
+     */
+    @Test
+    public void parse_unsupportedRepeatFrequency_throwsDowntownGurlException() {
+        assertThrows(DowntownGurlException.class, () ->
+                Parser.parse("deadline submit report /by 2/12/2019 1800 /repeat daily"));
+    }
+
+    /**
+     * Checks that malformed repeat commands are rejected.
+     */
+    @Test
+    public void parse_malformedRepeatCommand_throwsDowntownGurlException() {
+        assertThrows(DowntownGurlException.class, () -> Parser.parse("repeat 1 weekly"));
+        assertThrows(DowntownGurlException.class, () -> Parser.parse("repeat /weekly"));
     }
 
     /**

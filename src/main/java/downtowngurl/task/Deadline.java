@@ -26,7 +26,8 @@ public class Deadline extends Task {
      */
     @Override
     public String toStorageString() {
-        return super.toStorageString() + " * " + escapeStorageField(TaskDateTime.formatForStorage(this.by));
+        return super.toStorageString() + " * " + escapeStorageField(TaskDateTime.formatForStorage(this.by))
+                + getRecurrenceStorageText();
     }
 
     /**
@@ -46,6 +47,7 @@ public class Deadline extends Task {
      */
     @Override
     public String toString() {
-        return super.toString() + " (by: " + TaskDateTime.formatForDisplay(this.by) + ")";
+        return super.toString() + " (by: " + TaskDateTime.formatForDisplay(this.by) + ")"
+                + getRecurrenceDisplayText();
     }
 }

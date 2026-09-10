@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import downtowngurl.exception.DowntownGurlException;
 import downtowngurl.task.Deadline;
 import downtowngurl.task.Event;
+import downtowngurl.task.RecurrenceFrequency;
 import downtowngurl.task.Task;
 import downtowngurl.task.TaskDateTime;
 import downtowngurl.task.Todo;
@@ -157,14 +158,16 @@ public class Storage {
      * @throws DowntownGurlException If the fields are not in the expected format.
      */
     private Deadline createDeadlineFromStorageParts(String[] parts) throws DowntownGurlException {
-        if (parts.length == 4) {
+        if (parts.length == 4 || parts.length == 5) {
             String description = unescapeStorageField(parts[2]);
             String by = unescapeStorageField(parts[3]);
             if (description.isBlank() || by.isBlank()) {
                 throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
             }
             assert !description.isBlank() && !by.isBlank() : "Modern deadline fields should be present.";
-            return new Deadline(description, TaskDateTime.parseFromStorage(by));
+            Deadline deadline = new Deadline(description, TaskDateTime.parseFromStorage(by));
+            setRecurrenceFromStoragePart(deadline, parts, 4);
+            return deadline;
         }
         if (parts.length != 3 || parts[2].isBlank()) {
             throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
@@ -197,7 +200,7 @@ public class Storage {
      * @throws DowntownGurlException If the fields are not in the expected format.
      */
     private Event createEventFromStorageParts(String[] parts) throws DowntownGurlException {
-        if (parts.length == 5) {
+        if (parts.length == 5 || parts.length == 6) {
             String description = unescapeStorageField(parts[2]);
             String from = unescapeStorageField(parts[3]);
             String to = unescapeStorageField(parts[4]);
@@ -206,7 +209,10 @@ public class Storage {
             }
             assert !description.isBlank() && !from.isBlank() && !to.isBlank()
                     : "Modern event fields should be present.";
-            return new Event(description, TaskDateTime.parseFromStorage(from), TaskDateTime.parseFromStorage(to));
+            Event event = new Event(description, TaskDateTime.parseFromStorage(from),
+                    TaskDateTime.parseFromStorage(to));
+            setRecurrenceFromStoragePart(event, parts, 5);
+            return event;
         }
         if (parts.length != 3 || parts[2].isBlank()) {
             throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
@@ -235,6 +241,22 @@ public class Storage {
             throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
         }
         return new Event(description, TaskDateTime.parseFromStorage(from), TaskDateTime.parseFromStorage(to));
+    }
+
+    /**
+     * Sets recurrence from an optional storage field.
+     *
+     * @param task Task to update.
+     * @param parts Saved task fields.
+     * @param recurrenceIndex Index of the optional recurrence field.
+     * @throws DowntownGurlException If the recurrence field is invalid.
+     */
+    private void setRecurrenceFromStoragePart(Task task, String[] parts, int recurrenceIndex)
+            throws DowntownGurlException {
+        if (parts.length == recurrenceIndex) {
+            return;
+        }
+        task.setRecurrenceFrequency(RecurrenceFrequency.parseFromStorage(parts[recurrenceIndex]));
     }
 
     /**

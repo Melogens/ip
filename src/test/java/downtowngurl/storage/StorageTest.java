@@ -16,6 +16,7 @@ import org.junit.jupiter.api.io.TempDir;
 import downtowngurl.exception.DowntownGurlException;
 import downtowngurl.task.Deadline;
 import downtowngurl.task.Event;
+import downtowngurl.task.RecurrenceFrequency;
 import downtowngurl.task.Task;
 import downtowngurl.task.TaskList;
 import downtowngurl.task.Todo;
@@ -54,16 +55,22 @@ public class StorageTest {
         Path taskFilePath = createTaskFile(
                 "T * Not done * read book",
                 "D * Done * submit report * 2019-12-02T18:00:00",
-                "E * Not done * meeting * 2019-12-02T18:00:00 * 2019-12-02T20:00:00");
+                "E * Not done * meeting * 2019-12-02T18:00:00 * 2019-12-02T20:00:00",
+                "D * Not done * pay rent * 2019-12-03T12:00:00 * WEEKLY",
+                "E * Done * sync * 2019-12-04T09:00:00 * 2019-12-04T10:00:00 * WEEKLY");
         Storage storage = new Storage(taskFilePath);
 
         ArrayList<Task> tasks = storage.loadTasks();
 
-        assertEquals(3, tasks.size());
+        assertEquals(5, tasks.size());
         assertEquals("[T][ ] read book", tasks.get(0).toString());
         assertEquals("[D][X] submit report (by: 02 Dec 2019, Monday 18:00)", tasks.get(1).toString());
         assertEquals("[E][ ] meeting (from: 02 Dec 2019, Monday 18:00 to: 02 Dec 2019, Monday 20:00)",
                 tasks.get(2).toString());
+        assertEquals("[D][ ] pay rent (by: 03 Dec 2019, Tuesday 12:00) (repeats weekly)",
+                tasks.get(3).toString());
+        assertEquals("[E][X] sync (from: 04 Dec 2019, Wednesday 09:00 to: 04 Dec 2019, Wednesday 10:00)"
+                + " (repeats weekly)", tasks.get(4).toString());
         assertTrue(storage.getCorruptedLineNumbers().isEmpty());
     }
 
@@ -98,6 +105,7 @@ public class StorageTest {
                 "T * Not done * read book",
                 "bad saved line",
                 "D * Later * submit report * 2019-12-02T18:00:00",
+                "D * Not done * pay rent * 2019-12-03T12:00:00 * DAILY",
                 "",
                 "T * Done * write report");
         Storage storage = new Storage(taskFilePath);
@@ -107,7 +115,7 @@ public class StorageTest {
         assertEquals(2, tasks.size());
         assertEquals("[T][ ] read book", tasks.get(0).toString());
         assertEquals("[T][X] write report", tasks.get(1).toString());
-        assertEquals(List.of(2, 3), storage.getCorruptedLineNumbers());
+        assertEquals(List.of(2, 3, 4), storage.getCorruptedLineNumbers());
     }
 
     /**
@@ -126,16 +134,25 @@ public class StorageTest {
         deadline.markAsDone();
         Event event = new Event("meeting", LocalDateTime.of(2019, 12, 2, 18, 0),
                 LocalDateTime.of(2019, 12, 2, 20, 0));
+        Deadline recurringDeadline = new Deadline("pay rent", LocalDateTime.of(2019, 12, 3, 12, 0));
+        recurringDeadline.setRecurrenceFrequency(RecurrenceFrequency.WEEKLY);
+        Event recurringEvent = new Event("sync", LocalDateTime.of(2019, 12, 4, 9, 0),
+                LocalDateTime.of(2019, 12, 4, 10, 0));
+        recurringEvent.setRecurrenceFrequency(RecurrenceFrequency.WEEKLY);
         tasks.add(todo);
         tasks.add(deadline);
         tasks.add(event);
+        tasks.add(recurringDeadline);
+        tasks.add(recurringEvent);
 
         storage.saveTasks(tasks);
 
         assertEquals(List.of(
                 "T * Not done * line one\\nline two \\* urgent \\\\ done",
                 "D * Done * submit report * 2019-12-02T18:00:00",
-                "E * Not done * meeting * 2019-12-02T18:00:00 * 2019-12-02T20:00:00"),
+                "E * Not done * meeting * 2019-12-02T18:00:00 * 2019-12-02T20:00:00",
+                "D * Not done * pay rent * 2019-12-03T12:00:00 * WEEKLY",
+                "E * Not done * sync * 2019-12-04T09:00:00 * 2019-12-04T10:00:00 * WEEKLY"),
                 Files.readAllLines(taskFilePath));
     }
 

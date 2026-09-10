@@ -11,6 +11,7 @@ public class Task {
     private final String description;
     private final TaskType type;
     private boolean isDone;
+    private RecurrenceFrequency recurrenceFrequency;
 
     /**
      * Creates a new task that has not been marked as done yet.
@@ -22,6 +23,7 @@ public class Task {
         this.description = description;
         this.type = type;
         this.isDone = false;
+        this.recurrenceFrequency = null;
     }
 
     /**
@@ -63,6 +65,40 @@ public class Task {
      */
     public String getDescription() {
         return this.description;
+    }
+
+    /**
+     * Returns whether this task has a recurrence frequency.
+     *
+     * @return true if this task repeats, false otherwise.
+     */
+    public boolean isRecurring() {
+        return this.recurrenceFrequency != null;
+    }
+
+    /**
+     * Returns how often this task repeats.
+     *
+     * @return Recurrence frequency, or null if the task does not repeat.
+     */
+    public RecurrenceFrequency getRecurrenceFrequency() {
+        return this.recurrenceFrequency;
+    }
+
+    /**
+     * Sets how often this task repeats.
+     *
+     * @param recurrenceFrequency Recurrence frequency to set.
+     */
+    public void setRecurrenceFrequency(RecurrenceFrequency recurrenceFrequency) {
+        this.recurrenceFrequency = recurrenceFrequency;
+    }
+
+    /**
+     * Removes this task's recurrence frequency.
+     */
+    public void clearRecurrence() {
+        this.recurrenceFrequency = null;
     }
 
     /**
@@ -115,5 +151,29 @@ public class Task {
     @Override
     public String toString() {
         return "[" + getTypeIcon() + "][" + getStatusIcon() + "] " + this.description;
+    }
+
+    /**
+     * Returns recurrence text to append to user-facing task descriptions.
+     *
+     * @return Recurrence display text, or an empty string if this task does not repeat.
+     */
+    protected String getRecurrenceDisplayText() {
+        if (!isRecurring()) {
+            return "";
+        }
+        return " (repeats " + this.recurrenceFrequency.getDisplayText() + ")";
+    }
+
+    /**
+     * Returns recurrence text to append to storage lines.
+     *
+     * @return Recurrence storage text, or an empty string if this task does not repeat.
+     */
+    protected String getRecurrenceStorageText() {
+        if (!isRecurring()) {
+            return "";
+        }
+        return STORAGE_FIELD_SEPARATOR + this.recurrenceFrequency.name();
     }
 }
