@@ -122,11 +122,15 @@ public class Storage {
             case "E" -> createEventFromStorageParts(parts);
             default -> throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
         };
+        assert task != null : "Recognized storage type should create a task.";
 
         if (parts[1].equals(STORAGE_DONE_STATUS)) {
             task.markAsDone();
+            assert task.isDone() : "Done storage status should mark the task as done.";
         } else if (!parts[1].equals(STORAGE_NOT_DONE_STATUS)) {
             throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
+        } else {
+            assert !task.isDone() : "Not done storage status should leave the task unmarked.";
         }
         return task;
     }
@@ -159,6 +163,7 @@ public class Storage {
             if (description.isBlank() || by.isBlank()) {
                 throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
             }
+            assert !description.isBlank() && !by.isBlank() : "Modern deadline fields should be present.";
             return new Deadline(description, TaskDateTime.parseFromStorage(by));
         }
         if (parts.length != 3 || parts[2].isBlank()) {
@@ -199,6 +204,8 @@ public class Storage {
             if (description.isBlank() || from.isBlank() || to.isBlank()) {
                 throw new DowntownGurlException(LOAD_ERROR_MESSAGE);
             }
+            assert !description.isBlank() && !from.isBlank() && !to.isBlank()
+                    : "Modern event fields should be present.";
             return new Event(description, TaskDateTime.parseFromStorage(from), TaskDateTime.parseFromStorage(to));
         }
         if (parts.length != 3 || parts[2].isBlank()) {

@@ -24,6 +24,7 @@ public class TaskList implements Iterable<Task> {
      * @param tasks Saved tasks to start with.
      */
     public TaskList(ArrayList<Task> tasks) {
+        assert tasks != null : "Loaded task collection should not be null.";
         this.tasks = tasks;
     }
 
@@ -129,6 +130,23 @@ public class TaskList implements Iterable<Task> {
      */
     public void sortByDate() {
         this.tasks.sort(Comparator.comparing(Task::getSortDateTime, Comparator.nullsLast(Comparator.naturalOrder())));
+        assert isSortedByDate() : "Tasks should be sorted by date after sorting.";
+    }
+
+    /**
+     * Returns whether the current task order is nondecreasing by sort date, with undated tasks last.
+     *
+     * @return true if tasks are sorted by sort date.
+     */
+    private boolean isSortedByDate() {
+        Comparator<Task> taskDateComparator =
+                Comparator.comparing(Task::getSortDateTime, Comparator.nullsLast(Comparator.naturalOrder()));
+        for (int i = 1; i < this.tasks.size(); i++) {
+            if (taskDateComparator.compare(this.tasks.get(i - 1), this.tasks.get(i)) > 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
