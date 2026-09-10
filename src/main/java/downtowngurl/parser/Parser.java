@@ -18,6 +18,16 @@ import downtowngurl.task.Todo;
  * Makes sense of raw user commands.
  */
 public class Parser {
+    private static final String ARGUMENT_SEPARATOR = " ";
+    private static final String BYE_COMMAND = "bye";
+    private static final String LIST_COMMAND = "list";
+    private static final String FIND_COMMAND = "find";
+    private static final String MARK_COMMAND = "mark";
+    private static final String UNMARK_COMMAND = "unmark";
+    private static final String DELETE_COMMAND = "delete";
+    private static final String TODO_COMMAND = "todo";
+    private static final String DEADLINE_COMMAND = "deadline";
+    private static final String EVENT_COMMAND = "event";
     private static final String DEADLINE_SEPARATOR = " /by ";
     private static final String EVENT_FROM_SEPARATOR = " /from ";
     private static final String EVENT_TO_SEPARATOR = " /to ";
@@ -37,39 +47,39 @@ public class Parser {
      * @throws DowntownGurlException If the command is invalid.
      */
     public static Command parse(String command) throws DowntownGurlException {
-        if (command.equals("bye")) {
+        if (command.equals(BYE_COMMAND)) {
             return new ByeCommand();
         }
 
-        if (command.equals("list")) {
+        if (command.equals(LIST_COMMAND)) {
             return new ListCommand();
         }
 
-        if (command.equals("find") || command.startsWith("find ")) {
+        if (isCommandOrArgumentStart(command, FIND_COMMAND)) {
             return new FindCommand(getFindKeyword(command));
         }
 
-        if (command.startsWith("mark ")) {
-            return new MarkCommand(getTaskIndexFromCommand(command, 5));
+        if (startsWithCommandArgument(command, MARK_COMMAND)) {
+            return new MarkCommand(getTaskIndexFromCommand(command, getArgumentStartIndex(MARK_COMMAND)));
         }
 
-        if (command.startsWith("unmark ")) {
-            return new UnmarkCommand(getTaskIndexFromCommand(command, 7));
+        if (startsWithCommandArgument(command, UNMARK_COMMAND)) {
+            return new UnmarkCommand(getTaskIndexFromCommand(command, getArgumentStartIndex(UNMARK_COMMAND)));
         }
 
-        if (command.startsWith("delete ")) {
-            return new DeleteCommand(getTaskIndexFromCommand(command, 7));
+        if (startsWithCommandArgument(command, DELETE_COMMAND)) {
+            return new DeleteCommand(getTaskIndexFromCommand(command, getArgumentStartIndex(DELETE_COMMAND)));
         }
 
-        if (command.equals("todo") || command.startsWith("todo ")) {
+        if (isCommandOrArgumentStart(command, TODO_COMMAND)) {
             return new AddCommand(createTodo(command));
         }
 
-        if (command.equals("deadline") || command.startsWith("deadline ")) {
+        if (isCommandOrArgumentStart(command, DEADLINE_COMMAND)) {
             return new AddCommand(createDeadline(command));
         }
 
-        if (command.equals("event") || command.startsWith("event ")) {
+        if (isCommandOrArgumentStart(command, EVENT_COMMAND)) {
             return new AddCommand(createEvent(command));
         }
 
@@ -84,10 +94,11 @@ public class Parser {
      * @throws DowntownGurlException If the keyword is missing.
      */
     private static String getFindKeyword(String command) throws DowntownGurlException {
-        if (command.length() <= 5 || command.substring(5).isBlank()) {
+        String keyword = getCommandArgument(command, FIND_COMMAND);
+        if (keyword.isBlank()) {
             throw new DowntownGurlException(EMPTY_FIND_KEYWORD_MESSAGE);
         }
-        return command.substring(5).trim();
+        return keyword.trim();
     }
 
     /**
@@ -98,10 +109,11 @@ public class Parser {
      * @throws DowntownGurlException If the todo description is missing.
      */
     private static Todo createTodo(String command) throws DowntownGurlException {
-        if (command.length() <= 5 || command.substring(5).isBlank()) {
+        String description = getCommandArgument(command, TODO_COMMAND);
+        if (description.isBlank()) {
             throw new DowntownGurlException(EMPTY_TASK_MESSAGE);
         }
-        return new Todo(command.substring(5));
+        return new Todo(description);
     }
 
     /**
@@ -116,8 +128,8 @@ public class Parser {
         if (separatorIndex == -1) {
             throw new DowntownGurlException(DEADLINE_FORMAT_HINT);
         }
+        String description = command.substring(getArgumentStartIndex(DEADLINE_COMMAND), separatorIndex);
         assert separatorIndex >= 9 : "Deadline separator should appear after the command word.";
-        String description = command.substring(9, separatorIndex);
         String by = command.substring(separatorIndex + DEADLINE_SEPARATOR.length());
         if (description.isBlank() || by.isBlank()) {
             throw new DowntownGurlException(DEADLINE_FORMAT_HINT);
@@ -142,9 +154,9 @@ public class Parser {
         if (fromIndex == -1 || toIndex == -1 || fromIndex >= toIndex) {
             throw new DowntownGurlException(EVENT_FORMAT_HINT);
         }
+        String description = command.substring(getArgumentStartIndex(EVENT_COMMAND), fromIndex);
         assert fromIndex >= 6 : "Event start separator should appear after the command word.";
         assert toIndex > fromIndex : "Event end separator should appear after the start separator.";
-        String description = command.substring(6, fromIndex);
         String from = command.substring(fromIndex + EVENT_FROM_SEPARATOR.length(), toIndex);
         String to = command.substring(toIndex + EVENT_TO_SEPARATOR.length());
         if (description.isBlank() || from.isBlank() || to.isBlank()) {
@@ -177,5 +189,52 @@ public class Parser {
             throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
         }
         return taskNumber - 1;
+    }
+
+    /**
+     * Returns whether the command is exactly the command word or begins with its argument separator.
+     *
+     * @param command Full user command.
+     * @param commandWord Command word to match.
+     * @return true if the input matches the command word or its argument form.
+     */
+    private static boolean isCommandOrArgumentStart(String command, String commandWord) {
+        return command.equals(commandWord) || startsWithCommandArgument(command, commandWord);
+    }
+
+    /**
+     * Returns whether the command begins with the command word followed by an argument separator.
+     *
+     * @param command Full user command.
+     * @param commandWord Command word to match.
+     * @return true if the input starts with the command word and an argument separator.
+     */
+    private static boolean startsWithCommandArgument(String command, String commandWord) {
+        return command.startsWith(commandWord + ARGUMENT_SEPARATOR);
+    }
+
+    /**
+     * Extracts the argument portion after the command word and its separator.
+     *
+     * @param command Full user command.
+     * @param commandWord Command word at the start of the input.
+     * @return Argument text, or an empty string if there is no argument separator.
+     */
+    private static String getCommandArgument(String command, String commandWord) {
+        if (command.equals(commandWord)) {
+            return "";
+        }
+        assert startsWithCommandArgument(command, commandWord) : "Command should start with the expected word.";
+        return command.substring(getArgumentStartIndex(commandWord));
+    }
+
+    /**
+     * Returns the index where a command's argument starts.
+     *
+     * @param commandWord Command word before the argument.
+     * @return Zero-based argument start index.
+     */
+    private static int getArgumentStartIndex(String commandWord) {
+        return commandWord.length() + ARGUMENT_SEPARATOR.length();
     }
 }
