@@ -62,7 +62,9 @@ public class DialogBox extends HBox {
      * @return dialog box for a user message.
      */
     public static DialogBox getUserDialog(String message, Image image) {
-        return new DialogBox(message, image);
+        DialogBox dialogBox = new DialogBox(message, image);
+        dialogBox.getStyleClass().add("user-dialog");
+        return dialogBox;
     }
 
     /**
@@ -74,6 +76,7 @@ public class DialogBox extends HBox {
      */
     public static DialogBox getDowntownGurlDialog(String message, Image image) {
         DialogBox dialogBox = new DialogBox(message, image);
+        dialogBox.getStyleClass().add("downtown-gurl-dialog");
         dialogBox.flip();
         return dialogBox;
     }
