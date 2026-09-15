@@ -58,6 +58,15 @@ public class TaskDateTimeTest {
     }
 
     /**
+     * Checks that dates which do not exist in the calendar are rejected.
+     */
+    @Test
+    public void parse_nonExistentCalendarDate_throwsDowntownGurlException() {
+        assertThrows(DowntownGurlException.class, () -> TaskDateTime.parse("31/2/2026 1800"));
+        assertThrows(DowntownGurlException.class, () -> TaskDateTime.parse("29/2/2025 1800"));
+    }
+
+    /**
      * Checks that an ISO storage date-time is parsed correctly.
      *
      * @throws DowntownGurlException If parsing unexpectedly fails.
@@ -112,6 +121,15 @@ public class TaskDateTimeTest {
     @Test
     public void parseFromStorage_invalidInput_throwsDowntownGurlException() {
         assertThrows(DowntownGurlException.class, () -> TaskDateTime.parseFromStorage("2 Dec 2019 6pm"));
+    }
+
+    /**
+     * Checks that legacy storage dates which do not exist in the calendar are rejected.
+     */
+    @Test
+    public void parseFromStorage_nonExistentCalendarDate_throwsDowntownGurlException() {
+        assertThrows(DowntownGurlException.class, () -> TaskDateTime.parseFromStorage("31/2/2026 1800"));
+        assertThrows(DowntownGurlException.class, () -> TaskDateTime.parseFromStorage("29/2/2025 1800"));
     }
 
     /**
