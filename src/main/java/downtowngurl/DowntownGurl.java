@@ -1,5 +1,8 @@
 package downtowngurl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
 import downtowngurl.command.Command;
@@ -20,6 +23,8 @@ public class DowntownGurl {
     private final Storage storage;
     private final Ui ui;
     private TaskList tasks;
+    private boolean hasLoadedTasks;
+    private boolean isExit;
 
     /**
      * Creates the chatbot application using the default file for saved tasks.
@@ -37,6 +42,8 @@ public class DowntownGurl {
         this.ui = new Ui();
         this.storage = new Storage(taskFilePath);
         this.tasks = new TaskList();
+        this.hasLoadedTasks = false;
+        this.isExit = false;
     }
 
     /**
@@ -44,7 +51,7 @@ public class DowntownGurl {
      */
     public void run() {
         this.ui.showWelcome();
-        this.tasks = loadTasks();
+        ensureTasksLoaded(this.ui);
         boolean isExit = false;
         while (!isExit && this.ui.hasNextCommand()) {
             try {
@@ -68,7 +75,28 @@ public class DowntownGurl {
      * @return response to display in the chat window.
      */
     public String getResponse(String input) {
-        return "DowntownGurl heard: " + input;
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream responseOutput = new PrintStream(outputStream, true, StandardCharsets.UTF_8);
+        Ui responseUi = new Ui(responseOutput);
+
+        ensureTasksLoaded(responseUi);
+        try {
+            Command command = Parser.parse(input);
+            command.execute(this.tasks, this.storage, responseUi);
+            this.isExit = command.isExit();
+        } catch (DowntownGurlException e) {
+            responseUi.showError(e.getMessage());
+        }
+        return outputStream.toString(StandardCharsets.UTF_8).stripTrailing();
+    }
+
+    /**
+     * Returns whether the most recent command should exit the application.
+     *
+     * @return true if the application should exit, false otherwise.
+     */
+    public boolean isExit() {
+        return this.isExit;
     }
 
     /**
@@ -77,16 +105,39 @@ public class DowntownGurl {
      * @return Task list from the data file, or an empty list if the file does not exist.
      */
     private TaskList loadTasks() {
+        return loadTasks(this.ui);
+    }
+
+    /**
+     * Loads tasks from the data file if it already exists.
+     *
+     * @param ui UI helper used to show loading errors.
+     * @return Task list from the data file, or an empty list if the file does not exist.
+     */
+    private TaskList loadTasks(Ui ui) {
         try {
             TaskList loadedTasks = new TaskList(this.storage.loadTasks());
             for (int lineNumber : this.storage.getCorruptedLineNumbers()) {
-                this.ui.showError(CORRUPTED_LINE_MESSAGE + lineNumber + ".");
+                ui.showError(CORRUPTED_LINE_MESSAGE + lineNumber + ".");
             }
             return loadedTasks;
         } catch (DowntownGurlException e) {
-            this.ui.showError(LOAD_ERROR_MESSAGE);
+            ui.showError(LOAD_ERROR_MESSAGE);
             return new TaskList();
         }
+    }
+
+    /**
+     * Loads saved tasks once before the first command is handled.
+     *
+     * @param ui UI helper used to show loading errors.
+     */
+    private void ensureTasksLoaded(Ui ui) {
+        if (this.hasLoadedTasks) {
+            return;
+        }
+        this.tasks = loadTasks(ui);
+        this.hasLoadedTasks = true;
     }
 
     /**

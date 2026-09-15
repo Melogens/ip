@@ -1,5 +1,6 @@
 package downtowngurl.ui;
 
+import java.io.PrintStream;
 import java.util.Scanner;
 
 import downtowngurl.task.Task;
@@ -13,12 +14,23 @@ public class Ui {
     private static final String DIVIDER = "<*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*><*>";
 
     private final Scanner scanner;
+    private final PrintStream output;
 
     /**
      * Creates a UI helper that reads commands from standard input.
      */
     public Ui() {
+        this(System.out);
+    }
+
+    /**
+     * Creates a UI helper that writes output to the given stream.
+     *
+     * @param output Stream used to show messages.
+     */
+    public Ui(PrintStream output) {
         this.scanner = new Scanner(System.in);
+        this.output = output;
     }
 
     /**
@@ -31,14 +43,14 @@ public class Ui {
                 | | | |/ _ \\ \\ /\\ / / '_ \\| __/ _ \\ \\ /\\ / / '_ \\| |___| | | ' __|| |
                 | |_| | (_) \\ V  V /| | | | || (_) \\ V  V /| | | | |_| | |_| | |  | |
                 |____/ \\___/ \\_/\\_/ |_| |_|\\__\\___/ \\_/\\_/ |_| |_|\\____|\\__,_|_|  |_|""";
-        System.out.println(DIVIDER);
-        System.out.println(banner);
-        System.out.println(DIVIDER);
-        System.out.println("Hey I'm " + CHATBOT_NAME + ".");
-        System.out.println("I'm here to give you a reality check "
+        this.output.println(DIVIDER);
+        this.output.println(banner);
+        this.output.println(DIVIDER);
+        this.output.println("Hey I'm " + CHATBOT_NAME + ".");
+        this.output.println("I'm here to give you a reality check "
                 + "and help you manifest that life you've been dreaming.");
-        System.out.println(DIVIDER);
-        System.out.println("Darling what's up?");
+        this.output.println(DIVIDER);
+        this.output.println("Darling what's up?");
     }
 
     /**
@@ -63,7 +75,7 @@ public class Ui {
      * Prints the goodbye message shown when the chatbot exits.
      */
     public void showGoodbye() {
-        System.out.println("That's bombz. Byes!");
+        this.output.println("That's bombz. Byes!");
     }
 
     /**
@@ -73,9 +85,9 @@ public class Ui {
      */
     public void showTaskList(TaskList tasks) {
         tasks.sortByDate();
-        System.out.println("Here's your tasks:");
+        this.output.println("Here's your tasks:");
         for (int i = 0; i < tasks.size(); i++) {
-            System.out.println(" " + (i + 1) + ". " + tasks.get(i));
+            this.output.println(" " + (i + 1) + ". " + tasks.get(i));
         }
     }
 
@@ -86,12 +98,12 @@ public class Ui {
      */
     public void showMatchingTasks(TaskList tasks) {
         if (tasks.size() == 0) {
-            System.out.println("No matching tasks found, bestie.");
+            this.output.println("No matching tasks found, bestie.");
             return;
         }
-        System.out.println("Here are the matching tasks:");
+        this.output.println("Here are the matching tasks:");
         for (int i = 0; i < tasks.size(); i++) {
-            System.out.println(" " + (i + 1) + ". " + tasks.get(i));
+            this.output.println(" " + (i + 1) + ". " + tasks.get(i));
         }
     }
 
@@ -102,8 +114,8 @@ public class Ui {
      * @param task Updated task.
      */
     public void showUpdatedTask(String message, Task task) {
-        System.out.println(message);
-        System.out.println("  " + task);
+        this.output.println(message);
+        this.output.println("  " + task);
     }
 
     /**
@@ -113,9 +125,9 @@ public class Ui {
      * @param taskCount Number of tasks after adding the task.
      */
     public void showAddedTask(Task addedTask, int taskCount) {
-        System.out.println("Gotcha. Noted it downz:");
-        System.out.println("  " + addedTask);
-        System.out.println("Now you got " + taskCount + " tasks in the roster.");
+        this.output.println("Gotcha. Noted it downz:");
+        this.output.println("  " + addedTask);
+        this.output.println("Now you got " + taskCount + " tasks in the roster.");
     }
 
     /**
@@ -125,9 +137,9 @@ public class Ui {
      * @param taskCount Number of tasks after removing the task.
      */
     public void showDeletedTask(Task removedTask, int taskCount) {
-        System.out.println("Sure~ I've removed this task:");
-        System.out.println("  " + removedTask);
-        System.out.println("Now you got " + taskCount + " tasks in the list.");
+        this.output.println("Sure~ I've removed this task:");
+        this.output.println("  " + removedTask);
+        this.output.println("Now you got " + taskCount + " tasks in the list.");
     }
 
     /**
@@ -136,13 +148,13 @@ public class Ui {
      * @param message Error message to show.
      */
     public void showError(String message) {
-        System.out.println(message);
+        this.output.println(message);
     }
 
     /**
      * Prints a divider line between chatbot interactions.
      */
     public void showLine() {
-        System.out.println(DIVIDER);
+        this.output.println(DIVIDER);
     }
 }
