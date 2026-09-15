@@ -157,6 +157,29 @@ public class StorageTest {
     }
 
     /**
+     * Checks that saving also works when the task file path has no explicit parent directory.
+     *
+     * @throws DowntownGurlException If saving unexpectedly fails.
+     * @throws IOException If the saved file cannot be read.
+     */
+    @Test
+    public void saveTasks_fileWithoutParent_writesTaskFile() throws DowntownGurlException, IOException {
+        Path taskFilePath = Path.of("storage-parentless-test.txt");
+        Files.deleteIfExists(taskFilePath);
+        Storage storage = new Storage(taskFilePath);
+        TaskList tasks = new TaskList();
+        tasks.add(new Todo("read book"));
+
+        try {
+            storage.saveTasks(tasks);
+
+            assertEquals(List.of("T * Not done * read book"), Files.readAllLines(taskFilePath));
+        } finally {
+            Files.deleteIfExists(taskFilePath);
+        }
+    }
+
+    /**
      * Creates a temporary task file containing the given lines.
      *
      * @param lines Lines to write into the task file.

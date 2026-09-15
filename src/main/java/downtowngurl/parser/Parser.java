@@ -59,6 +59,11 @@ public class Parser {
      * @throws DowntownGurlException If the command is invalid.
      */
     public static Command parse(String command) throws DowntownGurlException {
+        if (command == null || command.isBlank()) {
+            throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
+        }
+        command = command.trim();
+
         if (command.equals(BYE_COMMAND)) {
             return new ByeCommand();
         }

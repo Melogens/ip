@@ -93,11 +93,16 @@ public class Storage {
 
         Path tempFilePath = null;
         try {
-            Files.createDirectories(this.taskFilePath.getParent());
-            tempFilePath = Files.createTempFile(this.taskFilePath.getParent(), "downtownGurl", ".tmp");
+            Path storageDirectory = this.taskFilePath.getParent();
+            if (storageDirectory != null) {
+                Files.createDirectories(storageDirectory);
+            } else {
+                storageDirectory = Path.of(".");
+            }
+            tempFilePath = Files.createTempFile(storageDirectory, "downtownGurl", ".tmp");
             Files.write(tempFilePath, taskLines);
             Files.move(tempFilePath, this.taskFilePath, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
+        } catch (IOException | SecurityException e) {
             throw new DowntownGurlException(SAVE_ERROR_MESSAGE);
         } finally {
             deleteTempFile(tempFilePath);

@@ -219,6 +219,35 @@ public class ParserTest {
     }
 
     /**
+     * Checks that accidental blank input is rejected with a user-facing exception.
+     */
+    @Test
+    public void parse_blankCommand_throwsDowntownGurlException() {
+        assertThrows(DowntownGurlException.class, () -> Parser.parse(""));
+        assertThrows(DowntownGurlException.class, () -> Parser.parse("   "));
+    }
+
+    /**
+     * Checks that null input is rejected with a user-facing exception instead of a runtime crash.
+     */
+    @Test
+    public void parse_nullCommand_throwsDowntownGurlException() {
+        assertThrows(DowntownGurlException.class, () -> Parser.parse(null));
+    }
+
+    /**
+     * Checks that extra spaces around a command do not stop command recognition.
+     *
+     * @throws DowntownGurlException If parsing unexpectedly fails.
+     */
+    @Test
+    public void parse_commandWithOuterSpaces_returnsExpectedCommand() throws DowntownGurlException {
+        Command command = Parser.parse("  find book  ");
+
+        assertInstanceOf(FindCommand.class, command);
+    }
+
+    /**
      * Checks that a todo command without a description is rejected.
      */
     @Test
