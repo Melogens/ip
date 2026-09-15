@@ -14,6 +14,12 @@ import javafx.scene.layout.VBox;
  * Controller for the main GUI.
  */
 public class MainWindow extends AnchorPane {
+    private static final String INTRODUCTION_MESSAGE = "Hi bestie! I'm Downtown Gurl.\n"
+            + "You can try: \n"
+            + " * todo read notes\n"
+            + " * deadline submit project /by 20/9/2026 2359\n"
+            + " * event party /from 20/9/2026 1900 /to 20/9/2026 2300";
+
     @FXML
     private ScrollPane scrollPane;
     @FXML
@@ -35,6 +41,7 @@ public class MainWindow extends AnchorPane {
     @FXML
     public void initialize() {
         scrollPane.vvalueProperty().bind(dialogContainer.heightProperty());
+        dialogContainer.getChildren().add(DialogBox.getDowntownGurlDialog(INTRODUCTION_MESSAGE, downtownGurlImage));
     }
 
     /**
