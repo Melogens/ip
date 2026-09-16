@@ -29,7 +29,7 @@ public enum RecurrenceFrequency {
      * @throws DowntownGurlException If the frequency is unsupported.
      */
     public static RecurrenceFrequency parse(String input) throws DowntownGurlException {
-        if (WEEKLY.displayText.equals(input.trim())) {
+        if (WEEKLY.displayText.equalsIgnoreCase(input.trim())) {
             return WEEKLY;
         }
         throw new DowntownGurlException(UNSUPPORTED_FREQUENCY_MESSAGE);

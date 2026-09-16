@@ -1,6 +1,7 @@
 package downtowngurl.parser;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 import downtowngurl.command.AddCommand;
 import downtowngurl.command.ByeCommand;
@@ -42,14 +43,22 @@ public class Parser {
     private static final String REPEAT_SEPARATOR = " /repeat ";
     private static final String WEEKLY_REPEAT_SEPARATOR = " /weekly";
     private static final String EMPTY_TASK_MESSAGE = "Soz queen you gotta at least give me SOMETHING to work with.";
-    private static final String DEADLINE_FORMAT_HINT = EMPTY_TASK_MESSAGE
-            + "\nMaybe you could try formatting it as: deadline <task name> /by dd/mm/yyyy time";
-    private static final String EVENT_FORMAT_HINT = EMPTY_TASK_MESSAGE
-            + "\nMaybe you could try formatting it as: event <event name> /from dd/mm/yyyy time /to dd/mm/yyyy time";
-    private static final String EMPTY_FIND_KEYWORD_MESSAGE = "Soz queen you gotta give me a keyword to find.";
-    private static final String UNKNOWN_COMMAND_MESSAGE = "U sleeping alright? Sounds like you ain't...";
-    private static final String REPEAT_FORMAT_HINT =
-            "Use repeat like this: repeat <task number> /weekly";
+    private static final String FIND_FORMAT_HINT = createFormatHint("find <keyword>");
+    private static final String MARK_FORMAT_HINT = createFormatHint("mark <task number>");
+    private static final String UNMARK_FORMAT_HINT = createFormatHint("unmark <task number>");
+    private static final String DELETE_FORMAT_HINT = createFormatHint("delete <task number>");
+    private static final String REPEAT_FORMAT_HINT = createFormatHint("repeat <task number> /weekly");
+    private static final String UNREPEAT_FORMAT_HINT = createFormatHint("unrepeat <task number>");
+    private static final String TODO_FORMAT_HINT = createFormatHint("todo <task name>");
+    private static final String DEADLINE_FORMAT_HINT = createFormatHint("deadline <task name> /by dd/mm/yyyy time");
+    private static final String REPEATING_DEADLINE_FORMAT_HINT =
+            createFormatHint("deadline <task name> /by dd/mm/yyyy time /repeat weekly");
+    private static final String EVENT_FORMAT_HINT =
+            createFormatHint("event <event name> /from dd/mm/yyyy time /to dd/mm/yyyy time");
+    private static final String REPEATING_EVENT_FORMAT_HINT =
+            createFormatHint("event <event name> /from dd/mm/yyyy time /to dd/mm/yyyy time /repeat weekly");
+    private static final String UNKNOWN_COMMAND_MESSAGE = "Girl you need some sleep... "
+            + "I don't understand whatchu talking about.";
 
     /**
      * Parses a full user command into a command object the application can execute.
@@ -64,11 +73,11 @@ public class Parser {
         }
         command = command.trim();
 
-        if (command.equals(BYE_COMMAND)) {
+        if (isCommand(command, BYE_COMMAND)) {
             return new ByeCommand();
         }
 
-        if (command.equals(LIST_COMMAND)) {
+        if (isCommand(command, LIST_COMMAND)) {
             return new ListCommand();
         }
 
@@ -76,24 +85,28 @@ public class Parser {
             return new FindCommand(getFindKeyword(command));
         }
 
-        if (startsWithCommandArgument(command, MARK_COMMAND)) {
-            return new MarkCommand(getTaskIndexFromCommand(command, getArgumentStartIndex(MARK_COMMAND)));
+        if (isCommandOrArgumentStart(command, MARK_COMMAND)) {
+            return new MarkCommand(getTaskIndexFromCommand(command, getArgumentStartIndex(MARK_COMMAND),
+                    MARK_FORMAT_HINT));
         }
 
-        if (startsWithCommandArgument(command, UNMARK_COMMAND)) {
-            return new UnmarkCommand(getTaskIndexFromCommand(command, getArgumentStartIndex(UNMARK_COMMAND)));
+        if (isCommandOrArgumentStart(command, UNMARK_COMMAND)) {
+            return new UnmarkCommand(getTaskIndexFromCommand(command, getArgumentStartIndex(UNMARK_COMMAND),
+                    UNMARK_FORMAT_HINT));
         }
 
-        if (startsWithCommandArgument(command, DELETE_COMMAND)) {
-            return new DeleteCommand(getTaskIndexFromCommand(command, getArgumentStartIndex(DELETE_COMMAND)));
+        if (isCommandOrArgumentStart(command, DELETE_COMMAND)) {
+            return new DeleteCommand(getTaskIndexFromCommand(command, getArgumentStartIndex(DELETE_COMMAND),
+                    DELETE_FORMAT_HINT));
         }
 
         if (startsWithCommandArgument(command, REPEAT_COMMAND)) {
             return createRepeatCommand(command);
         }
 
-        if (startsWithCommandArgument(command, UNREPEAT_COMMAND)) {
-            return new UnrepeatCommand(getTaskIndexFromCommand(command, getArgumentStartIndex(UNREPEAT_COMMAND)));
+        if (isCommandOrArgumentStart(command, UNREPEAT_COMMAND)) {
+            return new UnrepeatCommand(getTaskIndexFromCommand(command, getArgumentStartIndex(UNREPEAT_COMMAND),
+                    UNREPEAT_FORMAT_HINT));
         }
 
         if (isCommandOrArgumentStart(command, TODO_COMMAND)) {
@@ -112,6 +125,16 @@ public class Parser {
     }
 
     /**
+     * Creates a two-line hint that shows the expected command shape before the empty-task reminder.
+     *
+     * @param commandFormat Expected command format.
+     * @return Format hint message.
+     */
+    private static String createFormatHint(String commandFormat) {
+        return "Maybe you could try formatting it as: " + commandFormat + "\n" + EMPTY_TASK_MESSAGE;
+    }
+
+    /**
      * Extracts the keyword from a find command.
      *
      * @param command Full user command.
@@ -121,7 +144,7 @@ public class Parser {
     private static String getFindKeyword(String command) throws DowntownGurlException {
         String keyword = getCommandArgument(command, FIND_COMMAND);
         if (keyword.isBlank()) {
-            throw new DowntownGurlException(EMPTY_FIND_KEYWORD_MESSAGE);
+            throw new DowntownGurlException(FIND_FORMAT_HINT);
         }
         return keyword.trim();
     }
@@ -136,7 +159,7 @@ public class Parser {
     private static Todo createTodo(String command) throws DowntownGurlException {
         String description = getCommandArgument(command, TODO_COMMAND);
         if (description.isBlank()) {
-            throw new DowntownGurlException(EMPTY_TASK_MESSAGE);
+            throw new DowntownGurlException(TODO_FORMAT_HINT);
         }
         return new Todo(description);
     }
@@ -150,7 +173,7 @@ public class Parser {
      */
     private static Deadline createDeadline(String command) throws DowntownGurlException {
         String taskCommand = removeRepeatClause(command);
-        int separatorIndex = taskCommand.indexOf(DEADLINE_SEPARATOR);
+        int separatorIndex = taskCommand.toLowerCase(Locale.ROOT).indexOf(DEADLINE_SEPARATOR);
         if (separatorIndex == -1) {
             throw new DowntownGurlException(DEADLINE_FORMAT_HINT);
         }
@@ -180,8 +203,9 @@ public class Parser {
      */
     private static Event createEvent(String command) throws DowntownGurlException {
         String taskCommand = removeRepeatClause(command);
-        int fromIndex = taskCommand.indexOf(EVENT_FROM_SEPARATOR);
-        int toIndex = taskCommand.indexOf(EVENT_TO_SEPARATOR);
+        String normalizedTaskCommand = taskCommand.toLowerCase(Locale.ROOT);
+        int fromIndex = normalizedTaskCommand.indexOf(EVENT_FROM_SEPARATOR);
+        int toIndex = normalizedTaskCommand.indexOf(EVENT_TO_SEPARATOR);
         if (fromIndex == -1 || toIndex == -1 || fromIndex >= toIndex) {
             throw new DowntownGurlException(EVENT_FORMAT_HINT);
         }
@@ -214,7 +238,8 @@ public class Parser {
      * @throws DowntownGurlException If the command is not in the expected format.
      */
     private static RepeatCommand createRepeatCommand(String command) throws DowntownGurlException {
-        int separatorIndex = command.indexOf(WEEKLY_REPEAT_SEPARATOR);
+        String normalizedCommand = command.toLowerCase(Locale.ROOT);
+        int separatorIndex = normalizedCommand.indexOf(WEEKLY_REPEAT_SEPARATOR);
         int taskNumberStartIndex = getArgumentStartIndex(REPEAT_COMMAND);
         if (separatorIndex < taskNumberStartIndex
                 || separatorIndex + WEEKLY_REPEAT_SEPARATOR.length() != command.length()) {
@@ -224,7 +249,8 @@ public class Parser {
         if (taskNumber.isBlank()) {
             throw new DowntownGurlException(REPEAT_FORMAT_HINT);
         }
-        return new RepeatCommand(getTaskIndexFromCommand(taskNumber.trim(), 0), RecurrenceFrequency.WEEKLY);
+        return new RepeatCommand(getTaskIndexFromCommand(taskNumber.trim(), 0, REPEAT_FORMAT_HINT),
+                RecurrenceFrequency.WEEKLY);
     }
 
     /**
@@ -234,7 +260,7 @@ public class Parser {
      * @return Command without the repeat clause.
      */
     private static String removeRepeatClause(String command) {
-        int repeatIndex = command.indexOf(REPEAT_SEPARATOR);
+        int repeatIndex = command.toLowerCase(Locale.ROOT).indexOf(REPEAT_SEPARATOR);
         if (repeatIndex == -1) {
             return command;
         }
@@ -249,12 +275,29 @@ public class Parser {
      * @throws DowntownGurlException If the repeat clause has an unsupported frequency.
      */
     private static void setRepeatFrequencyIfPresent(String command, Task task) throws DowntownGurlException {
-        int repeatIndex = command.indexOf(REPEAT_SEPARATOR);
+        int repeatIndex = command.toLowerCase(Locale.ROOT).indexOf(REPEAT_SEPARATOR);
         if (repeatIndex == -1) {
             return;
         }
         String frequency = command.substring(repeatIndex + REPEAT_SEPARATOR.length());
-        task.setRecurrenceFrequency(RecurrenceFrequency.parse(frequency));
+        try {
+            task.setRecurrenceFrequency(RecurrenceFrequency.parse(frequency));
+        } catch (DowntownGurlException e) {
+            throw new DowntownGurlException(getRepeatingTaskFormatHint(task));
+        }
+    }
+
+    /**
+     * Returns the expected command shape for a dated task with recurrence.
+     *
+     * @param task Dated task being made recurring.
+     * @return Format hint for the task type.
+     */
+    private static String getRepeatingTaskFormatHint(Task task) {
+        if (task instanceof Deadline) {
+            return REPEATING_DEADLINE_FORMAT_HINT;
+        }
+        return REPEATING_EVENT_FORMAT_HINT;
     }
 
     /**
@@ -265,16 +308,19 @@ public class Parser {
      * @return Zero-based index of the task selected by the user.
      * @throws DowntownGurlException If the task number is not valid.
      */
-    private static int getTaskIndexFromCommand(String command, int taskNumberStartIndex)
+    private static int getTaskIndexFromCommand(String command, int taskNumberStartIndex, String formatHint)
             throws DowntownGurlException {
+        if (taskNumberStartIndex >= command.length()) {
+            throw new DowntownGurlException(formatHint);
+        }
         int taskNumber;
         try {
             taskNumber = Integer.parseInt(command.substring(taskNumberStartIndex).trim());
         } catch (NumberFormatException e) {
-            throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
+            throw new DowntownGurlException(formatHint);
         }
         if (taskNumber < 1) {
-            throw new DowntownGurlException(UNKNOWN_COMMAND_MESSAGE);
+            throw new DowntownGurlException(formatHint);
         }
         return taskNumber - 1;
     }
@@ -287,7 +333,18 @@ public class Parser {
      * @return true if the input matches the command word or its argument form.
      */
     private static boolean isCommandOrArgumentStart(String command, String commandWord) {
-        return command.equals(commandWord) || startsWithCommandArgument(command, commandWord);
+        return isCommand(command, commandWord) || startsWithCommandArgument(command, commandWord);
+    }
+
+    /**
+     * Returns whether the command exactly matches the command word, ignoring letter case.
+     *
+     * @param command Full user command.
+     * @param commandWord Command word to match.
+     * @return true if the input matches the command word.
+     */
+    private static boolean isCommand(String command, String commandWord) {
+        return command.equalsIgnoreCase(commandWord);
     }
 
     /**
@@ -298,7 +355,7 @@ public class Parser {
      * @return true if the input starts with the command word and an argument separator.
      */
     private static boolean startsWithCommandArgument(String command, String commandWord) {
-        return command.startsWith(commandWord + ARGUMENT_SEPARATOR);
+        return command.toLowerCase(Locale.ROOT).startsWith(commandWord + ARGUMENT_SEPARATOR);
     }
 
     /**
@@ -309,7 +366,7 @@ public class Parser {
      * @return Argument text, or an empty string if there is no argument separator.
      */
     private static String getCommandArgument(String command, String commandWord) {
-        if (command.equals(commandWord)) {
+        if (isCommand(command, commandWord)) {
             return "";
         }
         assert startsWithCommandArgument(command, commandWord) : "Command should start with the expected word.";

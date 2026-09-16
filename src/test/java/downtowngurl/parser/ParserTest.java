@@ -204,7 +204,33 @@ public class ParserTest {
     }
 
     /**
-     * Checks that an unknown command is rejected.
+     * Checks that mixed-case command words and separators are accepted.
+     *
+     * @throws DowntownGurlException If parsing or command execution unexpectedly fails.
+     */
+    @Test
+    public void parse_mixedCaseCommandSyntax_executesCommands() throws DowntownGurlException {
+        TaskList tasks = new TaskList();
+
+        Parser.parse("toDo Read Book").execute(tasks, this.storage, this.ui);
+        Parser.parse("DeAdLiNe Submit Report /BY 2/12/2019 1800 /RePeAt WeEkLy")
+                .execute(tasks, this.storage, this.ui);
+        Parser.parse("MaRk 1").execute(tasks, this.storage, this.ui);
+        Parser.parse("uNrEpEaT 2").execute(tasks, this.storage, this.ui);
+        Command listCommand = Parser.parse("LiSt");
+        Command findCommand = Parser.parse("FiNd Book");
+        Command byeCommand = Parser.parse("ByE");
+        Parser.parse("dElEtE 1").execute(tasks, this.storage, this.ui);
+
+        assertEquals(1, tasks.size());
+        assertEquals("[D][ ] Submit Report (by: 02 Dec 2019, Monday 18:00)", tasks.get(0).toString());
+        assertFalse(listCommand.isExit());
+        assertInstanceOf(FindCommand.class, findCommand);
+        assertTrue(byeCommand.isExit());
+    }
+
+    /**
+     * Checks that a find command returns a find command object.
      */
     @Test
     public void parse_findCommand_returnsFindCommand() throws DowntownGurlException {
@@ -252,7 +278,10 @@ public class ParserTest {
      */
     @Test
     public void parse_emptyTodoDescription_throwsDowntownGurlException() {
-        assertThrows(DowntownGurlException.class, () -> Parser.parse("todo   "));
+        DowntownGurlException exception = assertThrows(DowntownGurlException.class,
+                () -> Parser.parse("todo   "));
+
+        assertEquals(createFormatHint("todo <task name>"), exception.getMessage());
     }
 
     /**
@@ -260,12 +289,18 @@ public class ParserTest {
      */
     @Test
     public void parse_emptyFindKeyword_throwsDowntownGurlException() {
-        assertThrows(DowntownGurlException.class, () -> Parser.parse("find   "));
+        DowntownGurlException exception = assertThrows(DowntownGurlException.class,
+                () -> Parser.parse("find   "));
+
+        assertEquals(createFormatHint("find <keyword>"), exception.getMessage());
     }
 
     @Test
     public void parse_missingDeadlineDate_throwsDowntownGurlException() {
-        assertThrows(DowntownGurlException.class, () -> Parser.parse("deadline return book"));
+        DowntownGurlException exception = assertThrows(DowntownGurlException.class,
+                () -> Parser.parse("deadline return book"));
+
+        assertEquals(createFormatHint("deadline <task name> /by dd/mm/yyyy time"), exception.getMessage());
     }
 
     /**
@@ -273,7 +308,11 @@ public class ParserTest {
      */
     @Test
     public void parse_missingEventEndDate_throwsDowntownGurlException() {
-        assertThrows(DowntownGurlException.class, () -> Parser.parse("event project meeting /from 2/12/2019 1800"));
+        DowntownGurlException exception = assertThrows(DowntownGurlException.class,
+                () -> Parser.parse("event project meeting /from 2/12/2019 1800"));
+
+        assertEquals(createFormatHint("event <event name> /from dd/mm/yyyy time /to dd/mm/yyyy time"),
+                exception.getMessage());
     }
 
     /**
@@ -281,8 +320,11 @@ public class ParserTest {
      */
     @Test
     public void parse_unsupportedRepeatFrequency_throwsDowntownGurlException() {
-        assertThrows(DowntownGurlException.class, () ->
+        DowntownGurlException exception = assertThrows(DowntownGurlException.class, () ->
                 Parser.parse("deadline submit report /by 2/12/2019 1800 /repeat daily"));
+
+        assertEquals(createFormatHint("deadline <task name> /by dd/mm/yyyy time /repeat weekly"),
+                exception.getMessage());
     }
 
     /**
@@ -290,8 +332,13 @@ public class ParserTest {
      */
     @Test
     public void parse_malformedRepeatCommand_throwsDowntownGurlException() {
-        assertThrows(DowntownGurlException.class, () -> Parser.parse("repeat 1 weekly"));
-        assertThrows(DowntownGurlException.class, () -> Parser.parse("repeat /weekly"));
+        DowntownGurlException missingSeparatorException = assertThrows(DowntownGurlException.class,
+                () -> Parser.parse("repeat 1 weekly"));
+        DowntownGurlException missingTaskNumberException = assertThrows(DowntownGurlException.class,
+                () -> Parser.parse("repeat /weekly"));
+
+        assertEquals(createFormatHint("repeat <task number> /weekly"), missingSeparatorException.getMessage());
+        assertEquals(createFormatHint("repeat <task number> /weekly"), missingTaskNumberException.getMessage());
     }
 
     /**
@@ -299,8 +346,62 @@ public class ParserTest {
      */
     @Test
     public void parse_invalidTaskNumber_throwsDowntownGurlException() {
-        assertThrows(DowntownGurlException.class, () -> Parser.parse("mark 0"));
-        assertThrows(DowntownGurlException.class, () -> Parser.parse("mark one"));
+        DowntownGurlException nonPositiveException = assertThrows(DowntownGurlException.class,
+                () -> Parser.parse("mark 0"));
+        DowntownGurlException nonNumericException = assertThrows(DowntownGurlException.class,
+                () -> Parser.parse("mark one"));
+
+        assertEquals(createFormatHint("mark <task number>"), nonPositiveException.getMessage());
+        assertEquals(createFormatHint("mark <task number>"), nonNumericException.getMessage());
+    }
+
+    /**
+     * Checks that commands that select tasks explain their expected task-number argument.
+     */
+    @Test
+    public void parse_missingTaskNumber_throwsDowntownGurlException() {
+        assertFormatHint("mark", "mark <task number>");
+        assertFormatHint("unmark", "unmark <task number>");
+        assertFormatHint("delete", "delete <task number>");
+        assertFormatHint("unrepeat", "unrepeat <task number>");
+    }
+
+    /**
+     * Checks that a validly formatted but out-of-range task number gives a list-number hint.
+     */
+    @Test
+    public void execute_taskNumberOutOfRange_throwsDowntownGurlException() throws DowntownGurlException {
+        TaskList tasks = new TaskList();
+
+        DowntownGurlException exception = assertThrows(DowntownGurlException.class,
+                () -> Parser.parse("mark 1").execute(tasks, this.storage, this.ui));
+
+        assertEquals("Maybe you could try using a task number from your list."
+                + "\nGirl you need some sleep... I don't understand whatchu talking about.",
+                exception.getMessage());
+    }
+
+    /**
+     * Checks a command input against its expected format-hint message.
+     *
+     * @param command Command input to parse.
+     * @param commandFormat Expected command format.
+     */
+    private static void assertFormatHint(String command, String commandFormat) {
+        DowntownGurlException exception = assertThrows(DowntownGurlException.class, () -> Parser.parse(command));
+
+        assertEquals(createFormatHint(commandFormat), exception.getMessage());
+    }
+
+    /**
+     * Creates the standard two-line format hint expected by parser errors.
+     *
+     * @param commandFormat Expected command format.
+     * @return Format hint message.
+     */
+    private static String createFormatHint(String commandFormat) {
+        return "Maybe you could try formatting it as: " + commandFormat
+                + "\nSoz queen you gotta at least give me SOMETHING to work with.";
     }
 
     /**

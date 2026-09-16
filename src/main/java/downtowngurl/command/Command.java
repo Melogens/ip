@@ -11,6 +11,9 @@ import downtowngurl.ui.Ui;
  * Represents a user command after it has been parsed.
  */
 public abstract class Command {
+    private static final String INVALID_TASK_NUMBER_MESSAGE = "Maybe you could try using a task number from your list."
+            + "\nGirl you need some sleep... I don't understand whatchu talking about.";
+
     /**
      * Executes this command.
      *
@@ -70,7 +73,7 @@ public abstract class Command {
      */
     protected void requireValidTaskIndex(TaskList tasks, int taskIndex) throws DowntownGurlException {
         if (taskIndex < 0 || taskIndex >= tasks.size()) {
-            throw new DowntownGurlException("U sleeping alright? Sounds like you ain't...");
+            throw new DowntownGurlException(INVALID_TASK_NUMBER_MESSAGE);
         }
         assert taskIndex >= 0 && taskIndex < tasks.size() : "Validated task index should be in range.";
     }
